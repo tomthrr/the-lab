@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+    <meta
+            name="viewport"
+            content="width=device-width, minimal-ui, viewport-fit=cover, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no"
+    />
+    <link rel="icon" type="image/png" href="assets/favicon.png" />
+
+    <title>The lab</title>
+    <link href="assets/globals.scss" rel="stylesheet" />
+    <link href="assets/main.scss" rel="stylesheet" />
+</head>
+<body class="app">
+<div class="container">
+    <div class="menu">
+        <h1>The labo 🧪</h1>
+        <div class="category">
+            <p class="title">ThreeJS</p>
+            <a class="link" href="simple-geometries.html">Simple geometries</a>
+            <a class="link" href="load-textures.html">Load textures</a>
+            <a class="link" href="3d-text.html">3D text</a>
+            <a class="link" href="add-lights.html">Add lights</a>
+            <a class="link" href="add-shadows.html">Add shadows</a>
+            <a class="link" href="create-scene-haunted-house.html">Create a scene : haunted house</a>
+            <a class="link" href="particles-wave.html">Particles wave</a>
+            <a class="link" href="galaxy-generator.html">Galaxy generator</a>
+            <a class="link" href="scroll-base.html">Scroll base</a>
+            <a class="link" href="add-physics.html">Add physics</a>
+            <a class="link" href="import-models.html">Import models</a>
+        </div>
+    </div>
+    <iframe class="iframe" allow="autoplay" src=""></iframe>
+</div>
+<a class="close-icon">&lt;</a>
+<a class="code-icon" href="" target="_blank">&lt;&#47;&gt;</a>
+<script type="module">
+    const projectsLinks = document.querySelectorAll('a.link');
+    const iFrame = document.querySelector('.iframe');
+    const closeButton = document.querySelector('.close-icon');
+    const menu = document.querySelector('.menu');
+
+    closeButton.addEventListener('click', () => {
+        // close the menu
+        menu.classList.toggle('closed');
+        iFrame.classList.toggle('resized');
+        closeButton.classList.toggle('replace');
+    });
+
+    let loadQuery = location.search.split('src=');
+    console.log('loadQuery::', loadQuery)
+    if (loadQuery[1]) {
+        iFrame.src = loadQuery[1];
+        highlight(loadQuery[1]);
+    } else {
+        console.log('else')
+        // choose random example to show if none linked
+        let target = projectsLinks[Math.floor(Math.random() * projectsLinks.length)];
+        updateExample({ target });
+    }
+
+    projectsLinks.forEach((link) => {
+        link.addEventListener('click', updateExample, false);
+    });
+
+    function updateExample(e) {
+        console.log(e.target.href.split('/'));
+        let src = e.target.href.split('/')[3];
+
+        // Allow user to cmd/ctrl + click to open in new tab
+        if (e.metaKey) {
+            window.open(`${location.origin}${location.pathname}?src=${src}`, '_blank');
+            return;
+        }
+
+      console.log('pathname::', location.pathname)
+
+      iFrame.src = e.target.href;
+      highlight(src);
+
+      // Update search query
+      history.pushState(null, null, `${location.origin}${location.pathname}?src=${src}`);
+      e.preventDefault && e.preventDefault();
+    }
+
+
+    // Highlight and update others
+    function highlight(src) {
+        projectsLinks.forEach((link) => {
+            let linkSrc = link.href.split('examples/')[1];
+            if (src === linkSrc) link.classList.add('active');
+            else link.classList.remove('active');
+        });
+    }
+</script>
+</body>
+</html>
