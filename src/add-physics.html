@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -6,7 +7,6 @@
           name="viewport"
           content="width=device-width, minimal-ui, viewport-fit=cover, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no"
   />
-  <link rel="icon" type="image/png" href="assets/favicon.png" />
 
   <title>ThreeJS - Add physics</title>
   <link href="assets/main.scss" rel="stylesheet" />
@@ -42,22 +42,21 @@
     const cubeTextureLoader = new THREE.CubeTextureLoader()
 
     const environmentMapTexture = cubeTextureLoader.load([
-      '/textures/environmentMaps/0/px.png',
-      '/textures/environmentMaps/0/nx.png',
-      '/textures/environmentMaps/0/py.png',
-      '/textures/environmentMaps/0/ny.png',
-      '/textures/environmentMaps/0/pz.png',
-      '/textures/environmentMaps/0/nz.png'
+      '/textures/add_physics/environmentMaps/0/px.png',
+      '/textures/add_physics/environmentMaps/0/nx.png',
+      '/textures/add_physics/environmentMaps/0/py.png',
+      '/textures/add_physics/environmentMaps/0/ny.png',
+      '/textures/add_physics/environmentMaps/0/pz.png',
+      '/textures/add_physics/environmentMaps/0/nz.png'
     ])
 
     /**
      * Sounds
      */
-    const hitSound = new Audio('/sounds/hit.mp3')
+    const hitSound = new Audio('/textures/add_physics/sounds/hit.mp3')
 
     const playHitSound = (collision) =>
     {
-      console.log(collision.contact.getImpactVelocityAlongNormal())
       const impactStrength = collision.contact.getImpactVelocityAlongNormal()
 
       if(impactStrength > 1.5)

@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -6,7 +7,6 @@
           name="viewport"
           content="width=device-width, minimal-ui, viewport-fit=cover, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no"
   />
-  <link rel="icon" type="image/png" href="assets/favicon.png" />
 
   <title>ThreeJS - Load textures</title>
   <link href="assets/main.scss" rel="stylesheet" />
@@ -45,24 +45,24 @@
 
   loadingManager.onStart = () =>
   {
-    console.log('loading started')
+    //console.log('loading started')
   }
   loadingManager.onLoad = () =>
   {
-    console.log('loading finished')
+    //console.log('loading finished')
   }
   loadingManager.onProgress = () =>
   {
-    console.log('loading progressing')
+    //console.log('loading progressing')
   }
   loadingManager.onError = () =>
   {
-    console.log('loading error')
+    //console.log('loading error')
   }
 
   const textureLoader = new THREE.TextureLoader(loadingManager)
 
-  const colorTexture = textureLoader.load('/assets/textures/load_textures/minecraft.png')
+  const colorTexture = textureLoader.load('/textures/load_textures/minecraft.png')
   colorTexture.colorSpace = THREE.SRGBColorSpace
   colorTexture.wrapS = THREE.MirroredRepeatWrapping
   colorTexture.wrapT = THREE.MirroredRepeatWrapping

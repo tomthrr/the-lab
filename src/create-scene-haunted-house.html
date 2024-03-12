@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -6,7 +7,6 @@
           name="viewport"
           content="width=device-width, minimal-ui, viewport-fit=cover, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no"
   />
-  <link rel="icon" type="image/png" href="assets/favicon.png" />
 
   <title>ThreeJS - Create Scene</title>
   <link href="assets/main.scss" rel="stylesheet" />
@@ -36,26 +36,26 @@
    */
   const textureLoader = new THREE.TextureLoader()
 
-  const doorColorTexture = textureLoader.load('assets/textures/haunted_house/door/color.jpg')
+  const doorColorTexture = textureLoader.load('/textures/haunted_house/door/color.jpg')
   doorColorTexture.colorSpace = THREE.SRGBColorSpace
-  const doorAlphaTexture = textureLoader.load('assets/textures/haunted_house/door/alpha.jpg')
-  const doorAmbientOcclusionTexture = textureLoader.load('assets/textures/haunted_house/door/ambientOcclusion.jpg')
-  const doorHeightTexture = textureLoader.load('assets/textures/haunted_house/door/height.jpg')
-  const doorNormalTexture = textureLoader.load('assets/textures/haunted_house/door/normal.jpg')
-  const doorMetalnessTexture = textureLoader.load('assets/textures/haunted_house/door/metalness.jpg')
-  const doorRoughnessTexture = textureLoader.load('assets/textures/haunted_house/door/roughness.jpg')
+  const doorAlphaTexture = textureLoader.load('/textures/haunted_house/door/alpha.jpg')
+  const doorAmbientOcclusionTexture = textureLoader.load('/textures/haunted_house/door/ambientOcclusion.jpg')
+  const doorHeightTexture = textureLoader.load('/textures/haunted_house/door/height.jpg')
+  const doorNormalTexture = textureLoader.load('/textures/haunted_house/door/normal.jpg')
+  const doorMetalnessTexture = textureLoader.load('/textures/haunted_house/door/metalness.jpg')
+  const doorRoughnessTexture = textureLoader.load('/textures/haunted_house/door/roughness.jpg')
 
-  const bricksColorTexture = textureLoader.load('assets/textures/haunted_house/bricks/color.jpg')
+  const bricksColorTexture = textureLoader.load('/textures/haunted_house/bricks/color.jpg')
   bricksColorTexture.colorSpace = THREE.SRGBColorSpace
-  const bricksAmbientOcclusionTexture = textureLoader.load('assets/textures/haunted_house/bricks/ambientOcclusion.jpg')
-  const bricksNormalTexture = textureLoader.load('assets/textures/haunted_house/bricks/normal.jpg')
-  const bricksRoughnessTexture = textureLoader.load('assets/textures/haunted_house/bricks/roughness.jpg')
+  const bricksAmbientOcclusionTexture = textureLoader.load('/textures/haunted_house/bricks/ambientOcclusion.jpg')
+  const bricksNormalTexture = textureLoader.load('/textures/haunted_house/bricks/normal.jpg')
+  const bricksRoughnessTexture = textureLoader.load('/textures/haunted_house/bricks/roughness.jpg')
 
-  const grassColorTexture = textureLoader.load('assets/textures/haunted_house/grass/color.jpg')
+  const grassColorTexture = textureLoader.load('/textures/haunted_house/grass/color.jpg')
   grassColorTexture.colorSpace = THREE.SRGBColorSpace
-  const grassAmbientOcclusionTexture = textureLoader.load('assets/textures/haunted_house/grass/ambientOcclusion.jpg')
-  const grassNormalTexture = textureLoader.load('assets/textures/haunted_house/grass/normal.jpg')
-  const grassRoughnessTexture = textureLoader.load('assets/textures/haunted_house/grass/roughness.jpg')
+  const grassAmbientOcclusionTexture = textureLoader.load('/textures/haunted_house/grass/ambientOcclusion.jpg')
+  const grassNormalTexture = textureLoader.load('/textures/haunted_house/grass/normal.jpg')
+  const grassRoughnessTexture = textureLoader.load('/textures/haunted_house/grass/roughness.jpg')
 
   /**
    * House

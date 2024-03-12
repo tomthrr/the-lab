@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -6,7 +7,6 @@
           name="viewport"
           content="width=device-width, minimal-ui, viewport-fit=cover, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no"
   />
-  <link rel="icon" type="image/png" href="assets/favicon.png" />
 
   <title>ThreeJS - Import models</title>
   <link href="assets/main.scss" rel="stylesheet" />
@@ -38,7 +38,7 @@
      */
   // Draco Loader
     const dracoLoader = new DRACOLoader()
-    dracoLoader.setDecoderPath('/assets/algorithm/draco/')
+    dracoLoader.setDecoderPath('/algorithm/draco/')
 
     // GLTF Loader
     const gltfLoader = new GLTFLoader()
@@ -46,7 +46,7 @@
 
     gltfLoader.setDRACOLoader(dracoLoader)
     gltfLoader.load(
-      '/assets/textures/import_models/fox/glTF/Fox.gltf',
+      '/textures/import_models/fox/glTF/Fox.gltf',
       (gltf) => {
         gltf.scene.scale.set(0.025, 0.025, 0.025)
         scene.add(gltf.scene)

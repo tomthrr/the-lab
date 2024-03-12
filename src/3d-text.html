@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -6,7 +7,6 @@
           name="viewport"
           content="width=device-width, minimal-ui, viewport-fit=cover, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no"
   />
-  <link rel="icon" type="image/png" href="assets/favicon.png" />
 
   <title>ThreeJS - 3D Text</title>
   <link href="assets/main.scss" rel="stylesheet" />
@@ -38,7 +38,7 @@
    */
   const textureLoader = new THREE.TextureLoader()
 
-  const matcapTexture = textureLoader.load('/assets/textures/3d_text/mat_caps/3.png')
+  const matcapTexture = textureLoader.load('/textures/3d_text/mat_caps/3.png')
   matcapTexture.colorSpace = THREE.SRGBColorSpace
 
   /**
@@ -46,7 +46,7 @@
    */
   const fontloader = new FontLoader()
   fontloader.load(
-    'assets/fonts/3d_text/helvetiker_regular.typeface.json',
+    '/fonts/3d_text/helvetiker_regular.typeface.json',
     (font) => {
       const textGeometry = new TextGeometry(
         'Hello Three.js',
