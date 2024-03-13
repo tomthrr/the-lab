@@ -30,6 +30,7 @@
             <a class="link" data-src="scroll-base.html">Scroll base</a>
             <a class="link" data-src="add-physics.html">Add physics</a>
             <a class="link" data-src="import-models.html">Import models</a>
+            <a class="link" data-src="raycaster.html">Raycaster and mouse events</a>
         </div>
     </div>
     <iframe class="iframe" allow="autoplay" src=""></iframe>
@@ -50,13 +51,11 @@
     });
 
     let loadQuery = location.search.split('src=');
-    console.log("iciii::", loadQuery);
 
     if (loadQuery[1]) {
         // si le fichier n'existe pas ou n'est pas dans l'url
         let isThere = false;
         projectsLinks.forEach((link) => {
-            console.log('link.dataset.src', link.dataset.src, loadQuery[1], link.dataset.src === loadQuery[1])
             if (link.dataset.src === loadQuery[1]) {
                 isThere = true;
             }

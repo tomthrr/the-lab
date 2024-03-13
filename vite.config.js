@@ -28,6 +28,7 @@ export default {
           scrollBase: resolve(__dirname, 'src/scroll-base.html'),
           addPhysics: resolve(__dirname, 'src/add-physics.html'),
           importModels: resolve(__dirname, 'src/import-models.html'),
+          raycaster: resolve(__dirname, 'src/raycaster.html'),
         }
       },
     },
