@@ -1,4 +1,6 @@
 import { resolve } from 'path'
+import glsl from 'vite-plugin-glsl'
+
 
 export default {
   root: 'src/',
@@ -6,6 +8,7 @@ export default {
   base: './',
   server:
     {
+      port: 3100,
       host: true, // Open to local network and display URL
       open: !('SANDBOX_URL' in process.env || 'CODESANDBOX_HOST' in process.env) // Open if it's not a CodeSandbox
     },
@@ -29,7 +32,11 @@ export default {
           addPhysics: resolve(__dirname, 'src/add-physics.html'),
           importModels: resolve(__dirname, 'src/import-models.html'),
           raycaster: resolve(__dirname, 'src/raycaster.html'),
+          firstShader: resolve(__dirname, 'src/first-shader.html'),
         }
       },
     },
+  plugins: [
+    glsl()
+  ]
 }

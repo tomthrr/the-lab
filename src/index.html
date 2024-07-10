@@ -31,6 +31,8 @@
             <a class="link" data-src="add-physics.html">Add physics</a>
             <a class="link" data-src="import-models.html">Import models</a>
             <a class="link" data-src="raycaster.html">Raycaster and mouse events</a>
+            <a class="link" data-src="first-shader.html">First shader</a>
+            <a class="link" data-src="marble-torso.html">Marble torso</a>
         </div>
     </div>
     <iframe class="iframe" allow="autoplay" src=""></iframe>
@@ -44,7 +46,6 @@
     const menu = document.querySelector('.menu');
 
     closeButton.addEventListener('click', () => {
-        // close the menu
         menu.classList.toggle('closed');
         iFrame.classList.toggle('resized');
         closeButton.classList.toggle('replace');
@@ -61,15 +62,17 @@
             }
         });
         if (isThere) {
+            // on load un projet spécifique
             iFrame.src = loadQuery[1];
             highlight(loadQuery[1]);
         } else {
+            // sinon un projet random
             let target = projectsLinks[Math.floor(Math.random() * projectsLinks.length)];
             updateExample({ target });
         }
 
     } else {
-        // choose random example to show if none linked
+        // On load un projet random
         let target = projectsLinks[Math.floor(Math.random() * projectsLinks.length)];
         updateExample({ target });
     }
@@ -78,10 +81,10 @@
         link.addEventListener('click', updateExample, false);
     });
 
-    function updateExample(e) {
+    function    updateExample(e) {
         let src = e.target.dataset.src;
 
-        // Allow user to cmd/ctrl + click to open in new tab
+        // Control clique possible
         if (e.metaKey) {
             window.open(`${location.origin}${location.pathname}?src=${src}`, '_blank');
             return;
@@ -90,13 +93,11 @@
       iFrame.src = e.target.dataset.src;
       highlight(src);
 
-      // Update search query
       history.pushState(null, null, `${location.origin}${location.pathname}?src=${src}`);
       e.preventDefault && e.preventDefault();
     }
 
 
-    // Highlight and update others
     function highlight(src) {
         projectsLinks.forEach((link) => {
             let linkSrc = link.href.split('examples/')[1];
