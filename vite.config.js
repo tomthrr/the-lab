@@ -8,15 +8,15 @@ export default {
   base: './',
   server:
     {
-      port: 3100,
+      port: 3000,
       host: true, // Open to local network and display URL
       open: !('SANDBOX_URL' in process.env || 'CODESANDBOX_HOST' in process.env) // Open if it's not a CodeSandbox
     },
   build:
     {
-      outDir: '../dist', // Output in the dist/ folder
-      emptyOutDir: true, // Empty the folder first
-      sourcemap: true, // Add sourcemap
+      outDir: '../dist',
+      emptyOutDir: true,
+      sourcemap: true,
       rollupOptions: {
         input: {
           main: resolve(__dirname, 'src/index.html'),
@@ -33,6 +33,7 @@ export default {
           importModels: resolve(__dirname, 'src/import-models.html'),
           raycaster: resolve(__dirname, 'src/raycaster.html'),
           firstShader: resolve(__dirname, 'src/first-shader.html'),
+          scrollEarth: resolve(__dirname, 'src/scroll-earth.html'),
         }
       },
     },
