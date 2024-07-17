@@ -33,6 +33,7 @@ export default {
           importModels: resolve(__dirname, 'src/import-models.html'),
           raycaster: resolve(__dirname, 'src/raycaster.html'),
           firstShader: resolve(__dirname, 'src/first-shader.html'),
+          trheeCube: resolve(__dirname, 'src/3d-cube.html'),
           scrollEarth: resolve(__dirname, 'src/scroll-earth.html'),
         }
       },
