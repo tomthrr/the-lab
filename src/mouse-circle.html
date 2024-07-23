@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+  <meta
+          name="viewport"
+          content="width=device-width, minimal-ui, viewport-fit=cover, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no"
+  />
+  <link rel="icon" type="image/png" href="/favicon.ico" />
+
+  <title>The lab</title>
+  <link href="assets/main.scss" rel="stylesheet" />
+  <link href="assets/mouse-circle.scss" rel="stylesheet" />
+</head>
+<body class="app">
+<div class="container-project">
+  <div class="circle"></div>
+  <div class="main">
+    <p>Mouse circle</p>
+  </div>
+</div>
+<script type="module">
+  import gsap from 'gsap'
+
+  const pos = {
+    x: 0,
+    y: 0
+  }
+  const mouse = {
+    x: 0,
+    y: 0
+  }
+
+  const circle = document.querySelector('.circle');
+
+  document.addEventListener('mousemove', (e) => {
+    updateMouse(e)
+    updatePosition()
+  });
+
+  function updatePosition() {
+    pos.x += (mouse.x - pos.x) * 0.15;
+    pos.y += (mouse.y - pos.y) * 0.15;
+
+    gsap.to(circle, {
+      duration: 0.3,
+      x: pos.x,
+      y: pos.y
+    })
+  }
+
+  function updateMouse(e) {
+    mouse.x = e.pageX;
+    mouse.y = e.pageY;
+  }
+</script>
+
+</body>
+</html>
