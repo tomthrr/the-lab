@@ -47,11 +47,19 @@
     const closeButton = document.querySelector('.close-icon');
     const menu = document.querySelector('.menu');
 
+    /**
+     * Closing menu
+     */
+
     closeButton.addEventListener('click', () => {
         menu.classList.toggle('closed');
         iFrame.classList.toggle('resized');
         closeButton.classList.toggle('replace');
     });
+
+    /**
+     * Update Iframe
+     */
 
     let loadQuery = location.search.split('src=');
 
