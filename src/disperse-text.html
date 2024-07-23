@@ -37,28 +37,120 @@
 
     // Function to get characters and animate them
     function getChars(words) {
-      const wordContainer = document.querySelector('.main');
+      const main = document.querySelector('.main');
 
       const line = document.createElement('div'); // Créez un nouvel élément div pour chaque ligne
+
+      /**
+       * Split the words into an array of words
+       */
+
       words.split(" ").forEach((word, i) => {
-        line.className = 'line'; // Ajoutez une classe si vous en avez besoin pour styliser les lignes
+        line.className = 'line animate'; // Ajoutez une classe si vous en avez besoin pour styliser les lignes
         word.split("").forEach((letter, index) => {
           const span = document.createElement('span');
           span.className = 'char';
           span.textContent = letter;
           line.appendChild(span);
         });
-        wordContainer.appendChild(line);
+        main.appendChild(line);
       });
 
-      const chars = wordContainer.querySelectorAll('.char');
-      gsap.to(chars, { duration: 1, opacity: 1, stagger: 0.1 });
+      /**
+       * Animate the characters
+       */
+
+      const chars = line.querySelectorAll('.char');
+      chars.forEach((char, i) => {
+        line.addEventListener('mouseenter', () => {
+          main.classList.add('active');
+          char.classList.add('hovered');
+          gsap.to(char, {
+            x: animations[i].x,
+            y: animations[i].y,
+            rotationZ: animations[i].rotationZ,
+            duration: 0.5
+          })
+        })
+
+        line.addEventListener('mouseleave', () => {
+          main.classList.remove('active');
+          char.classList.remove('hovered');
+          gsap.to(char, {
+            x: 0,
+            y: 0,
+            rotationZ: 0,
+            duration: 0.5
+          })
+        })
+      })
     }
 
     // Appel de la fonction avec le mot que vous voulez animer
     getChars('+44123456789');
-    getChars('•Mail •Twitter');
+    getChars('• Mail');
+    getChars('• Twitter');
 
+    // Animation
+    const animations = [
+      {
+        x: -15.8,
+        y: -10.6,
+        rotationZ: -29,
+      },
+      {
+        x: -10.6,
+        y: -2.4,
+        rotationZ: 1,
+      },
+      {
+        x: 12,
+        y: 10.2,
+        rotationZ: -6,
+      },
+      {
+        x: 16.9,
+        y: 23,
+        rotationZ: 10,
+      },
+      {
+        x: 10.9,
+        y: -7.9,
+        rotationZ: -19,
+      },
+      {
+        x: 12.7,
+        y: -12.5,
+        rotationZ: 10,
+      },
+      {
+        x: 12.4,
+        y: -4.2,
+        rotationZ: -10,
+      },{
+        x: 12.4,
+        y: 12.2,
+        rotationZ: -2,
+      },
+      {
+        x: 13.5,
+        y: 8.6,
+        rotationZ: 6,
+      },{
+        x: 10.4,
+        y: 12.2,
+        rotationZ: 7,
+      },
+      {
+        x: 12,
+        y: -10.2,
+        rotationZ: 10,
+      },{
+        x: 13.4,
+        y: -1.2,
+        rotationZ: -10,
+      }
+    ]
   </script>
 </body>
 </html>
