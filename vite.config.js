@@ -35,6 +35,7 @@ export default {
           firstShader: resolve(__dirname, 'src/first-shader.html'),
           trheeCube: resolve(__dirname, 'src/3d-cube.html'),
           scrollEarth: resolve(__dirname, 'src/scroll-earth.html'),
+          dispersText: resolve(__dirname, 'src/disperse-text.html'),
         }
       },
     },
