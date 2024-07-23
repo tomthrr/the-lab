@@ -92,11 +92,14 @@
             return;
         }
 
-      iFrame.src = e.target.dataset.src;
-      highlight(src);
+        iFrame.src = e.target.dataset.src;
+        highlight(src);
 
-      history.pushState(null, null, `${location.origin}${location.pathname}?src=${src}`);
-      e.preventDefault && e.preventDefault();
+        history.pushState(null, null, `${location.origin}${location.pathname}?src=${src}`);
+        closeButton.classList.toggle('replace');
+        menu.classList.toggle('closed');
+        iFrame.classList.toggle('resized');
+        e.preventDefault && e.preventDefault();
     }
 
 
