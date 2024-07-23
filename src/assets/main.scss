@@ -97,21 +97,5 @@
 
 .container-project {
   margin: 0;
-
-  .title-project {
-    position: fixed;
-    top: 0;
-    left: 0;
-    z-index: 1;
-
-    margin: 66px;
-    font-size: 2rem;
-    font-weight: 700;
-    color: #191919;
-
-    &.white {
-      color: white;
-    }
-  }
 }
 
