@@ -1,0 +1,31 @@
+.container-project {
+  background-color: #0f0f0f;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  font-family: 'Roboto Light', sans-serif;
+
+  .main {
+    display: flex;
+    justify-content: center;
+    gap: 5rem;
+
+    .button {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      border-radius: 2rem;
+      font-size: 3vw;
+      pointer-events: bounding-box;
+
+      a {
+        display: block;
+        position: relative;
+        padding: 0.2em 0;
+        color: white;
+        text-decoration: none;
+      }
+    }
+  }
+}

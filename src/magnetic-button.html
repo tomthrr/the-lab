@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+  <meta
+          name="viewport"
+          content="width=device-width, minimal-ui, viewport-fit=cover, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no"
+  />
+  <link rel="icon" type="image/png" href="/favicon.ico" />
+
+  <title>The lab</title>
+  <link href="assets/main.scss" rel="stylesheet" />
+  <link href="assets/magnetic-button.scss" rel="stylesheet" />
+</head>
+<body class="app">
+<div class="container-project">
+  <div class="main">
+    <div class="button">
+      <p><a href="#">Twitter</a></p>
+    </div>
+    <div class="button">
+      <p><a href="#">Instagram</a></p>
+    </div>
+    <div class="button">
+      <p><a href="#">LinkedIn</a></p>
+    </div>
+  </div>
+</div>
+<script type="module">
+  import gsap from 'gsap'
+
+  const container = document.querySelectorAll('.button')
+
+  container.forEach((item, index) => {
+    const xTo = gsap.quickTo(item, "x", {duration: 1, ease: "elastic.out(1, 0.3)"})
+    const yTo = gsap.quickTo(item, "y", {duration: 1, ease: "elastic.out(1, 0.3)"})
+
+    const mouseMove = (e) => {
+      const {clientX, clientY} = e;
+      const {width, height, left, top} = item.getBoundingClientRect()
+
+      const x = clientX - (left + width / 2);
+      const y = clientY - (top + height / 2);
+
+      xTo(x);
+      yTo(y);
+    }
+
+    const mouseLeave = (e) => {
+      xTo(0);
+      yTo(0);
+    }
+
+    item.addEventListener('mousemove', mouseMove)
+    item.addEventListener('mouseleave', mouseLeave);
+  })
+</script>
+</body>
+</html>

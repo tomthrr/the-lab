@@ -37,6 +37,7 @@ export default {
           scrollEarth: resolve(__dirname, 'src/scroll-earth.html'),
           dispersText: resolve(__dirname, 'src/disperse-text.html'),
           mouseCircle: resolve(__dirname, 'src/mouse-circle.html'),
+          magneticButton: resolve(__dirname, 'src/magnetic-button.html'),
         }
       },
     },
