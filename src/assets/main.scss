@@ -45,6 +45,11 @@
           font-weight: 700;
           cursor: pointer;
           margin: 0 1rem;
+          transition: 0.3s padding-left ease-in;
+
+          &.hovered {
+            padding-left: 1rem;
+          }
         }
       }
     }
