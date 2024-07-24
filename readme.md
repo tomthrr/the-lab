@@ -1,4 +1,19 @@
-# Three.js Journey
+# The Lab 🧪
+
+## Description
+This is a simple website to train my skills in web development. You can find multiple catgeories of showcases, such as:
+- 3D models
+- 3D integrations
+- Mouse interactions
+- Animations
+- ...
+
+## Technologies
+- HTML
+- CSS
+- JavaScript
+- Three.js
+- GSAP
 
 ## Setup
 Download [Node.js](https://nodejs.org/en/download/).
