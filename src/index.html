@@ -66,6 +66,8 @@
      */
 
     let loadQuery = location.search.split('src=');
+    let codeIcon = document.querySelector('.code-icon');
+    const url = 'https://github.com/tomthrr/the-lab/tree/main/src/'
 
     if (loadQuery[1]) {
         // si le fichier n'existe pas ou n'est pas dans l'url
@@ -79,6 +81,8 @@
             // on load un projet spécifique
             iFrame.src = loadQuery[1];
             highlight(loadQuery[1]);
+            console.log(loadQuery[1]);
+            codeIcon.href = `${url}${loadQuery[1]}`;
         } else {
             // sinon un projet random
             let target = projectsLinks[Math.floor(Math.random() * projectsLinks.length)];
@@ -99,6 +103,8 @@
 
     function    updateExample(e) {
         let src = e.target.dataset.src;
+        // update code link
+        codeIcon.href = `${url}${src}`;
 
         // Control clique possible
         if (e.metaKey) {
