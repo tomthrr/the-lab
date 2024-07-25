@@ -81,11 +81,11 @@
             // on load un projet spécifique
             iFrame.src = loadQuery[1];
             highlight(loadQuery[1]);
-            console.log(loadQuery[1]);
             codeIcon.href = `${url}${loadQuery[1]}`;
         } else {
             // sinon un projet random
             let target = projectsLinks[Math.floor(Math.random() * projectsLinks.length)];
+            highlight(target.dataset.src);
             updateExample({ target });
         }
 
@@ -93,6 +93,7 @@
         // On load un projet random
         let target = projectsLinks[Math.floor(Math.random() * projectsLinks.length)];
         updateExample({ target });
+        highlight(target.dataset.src);
     }
 
     projectsLinks.forEach((link) => {
@@ -102,6 +103,7 @@
     });
 
     function    updateExample(e) {
+        unHighlight();
         let src = e.target.dataset.src;
         // update code link
         codeIcon.href = `${url}${src}`;
@@ -124,9 +126,14 @@
 
     function highlight(src) {
         projectsLinks.forEach((link) => {
-            let linkSrc = link.href.split('examples/')[1];
-            if (src === linkSrc) link.classList.add('active');
+            if (src === link.dataset.src) link.classList.add('active');
             else link.classList.remove('active');
+        });
+    }
+
+    function unHighlight() {
+        projectsLinks.forEach((link) => {
+            link.classList.remove('active');
         });
     }
 </script>
