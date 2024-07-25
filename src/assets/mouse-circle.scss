@@ -24,6 +24,10 @@
     transform: translate(-50%, -50%);
     mix-blend-mode: difference;
     pointer-events: none;
+
+    @media screen and (max-width: 650px) {
+      display: none;
+    }
   }
 
   .main {
@@ -36,5 +40,12 @@
     font-size: 5vw;
 
     font-family: "Noto Sans", sans-serif;
+
+    .smartphone {
+      display: block;
+      @media screen and (min-width: 650px) {
+        display: none;
+      }
+    }
   }
 }
