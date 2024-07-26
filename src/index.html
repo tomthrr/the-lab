@@ -15,8 +15,8 @@
 </head>
 <body class="app">
 <div class="container">
-    <div class="menu">
-        <h1>The labo 🧪</h1>
+    <div class="menu" data-lenis-prevent>
+        <h1>The lab 🧪</h1>
         <div class="category">
             <p class="title">3D</p>
             <a class="link" data-src="simple-geometries.html">Simple geometries</a>
@@ -39,6 +39,8 @@
             <a class="link" data-src="disperse-text.html">Disperse text</a>
             <a class="link" data-src="mouse-circle.html">Mouse circle</a>
             <a class="link" data-src="magnetic-button.html">Magnetic button</a>
+            <p class="title">Scroll</p>
+            <a class="link" data-src="text-parallax.html">Text Parallax</a>
         </div>
     </div>
     <iframe title="selected project" class="iframe" allow="autoplay" src="" style="margin: 0;"></iframe>
@@ -46,16 +48,16 @@
 <a class="close-icon">&lt;</a>
 <a class="code-icon" href="" target="_blank">&lt;&#47;&gt;</a>
 <script type="module">
+    import Lenis from 'lenis';
+
     const lenis = new Lenis();
-    document.addEventListener('DOMContentLoaded', () => {
 
-        function raf(time) {
-            lenis.raf(time)
-            requestAnimationFrame(raf)
-        }
 
-        requestAnimationFrame(raf)
-    })
+    function raf(time) {
+        lenis.raf(time);
+        requestAnimationFrame(raf);
+    }
+    requestAnimationFrame(raf);
 
     /**
      * Menu

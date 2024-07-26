@@ -2,6 +2,26 @@ body {
   margin: 0;
 }
 
+html.lenis, html.lenis body {
+  height: auto;
+}
+
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+
+.lenis.lenis-smooth iframe {
+  pointer-events: none;
+}
+
 .app {
   margin: 0;
 
@@ -10,23 +30,30 @@ body {
     width: 100%;
     display: flex;
     flex-direction: row;
-
+    position: relative;
+    
     .menu {
-
+      background-color: white;
       display: flex;
       flex-direction: column;
       justify-content: flex-start;
       align-items: flex-start;
       gap: 1rem;
+      z-index: 99;
 
       padding: 2rem 1rem;
       opacity: 1;
 
       transition: 0.3s width ease-in-out;
-      height: 100%;
       width: 250px;
+      height: 100vh;
 
-      overflow-y: scroll;
+      overflow: auto;
+
+      @media (max-width: 644px) {
+        position: absolute;
+        width: 100%
+      }
 
       &.closed {
         width: 0;
@@ -71,7 +98,7 @@ body {
 
     .iframe {
       width: calc(100% - 250px);
-      height: 100%;
+      height: 100vh;
 
       &.resized {
         width: 100%;

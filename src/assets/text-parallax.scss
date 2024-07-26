@@ -1,0 +1,44 @@
+.container-project, .intro {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  height: 100vh;
+  background-color: #0f0f0f;
+
+  color: white;
+
+  font-family: "Noto Sans", sans-serif;
+
+  p {
+    margin: 0;
+    font-size: 6vw;
+  }
+}
+
+.container-project {
+  padding-bottom: 100vh;
+
+  .main {
+
+    .line, .reverse-line {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      gap: 2rem;
+
+      p {
+        font-size: 5vw;
+        white-space: nowrap;
+      }
+
+      .content {
+        position: relative;
+        display: inline-flex;
+        gap: 2rem;
+      }
+    }
+
+
+  }
+}

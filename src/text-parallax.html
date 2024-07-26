@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+  <meta
+          name="viewport"
+          content="width=device-width, minimal-ui, viewport-fit=cover, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no"
+  />
+
+  <title>ThreeJS - 3D Cube</title>
+  <link href="assets/main.scss" rel="stylesheet" />
+  <link href="assets/text-parallax.scss" rel="stylesheet" />
+</head>
+<body class="app">
+<div class="intro">
+  <p>Scroll down</p>
+  <p>v</p>
+</div>
+<div class="container-project">
+  <div class="main">
+      <div class="line">
+        <div class="content">
+          <p class="deco">•</p>
+          <p class="deco">Frontend developer</p>
+          <p class="deco">Frontend developer</p>
+          <p class="deco">Frontend developer</p>
+        </div>
+      </div>
+      <div class="reverse-line">
+        <div class="content">
+          <p class="deco">•</p>
+          <p class="deco">Backend developer</p>
+          <p class="deco">Backend developer</p>
+          <p class="deco">Backend developer</p>
+        </div>
+      </div>
+    <div class="line">
+      <div class="content">
+        <p class="deco">•</p>
+        <p class="deco">Wine enjoyer</p>
+        <p class="deco">Wine enjoyer</p>
+        <p class="deco">Wine enjoyer</p>
+      </div>
+    </div>
+    </div>
+  </div>
+</div>
+<script type="module">
+  import gsap from 'gsap'
+  import {ScrollTrigger} from "gsap/ScrollTrigger";
+
+  gsap.registerPlugin(ScrollTrigger);
+
+  const lines = document.querySelectorAll('.line');
+  const reverses = document.querySelectorAll('.reverse-line');
+
+  lines.forEach((line, index) => {
+    const content = line.querySelector('.content');
+    const clone = content
+      .cloneNode(true);
+
+    content.after(clone);
+
+    gsap.set(line, {
+      xPercent: -10,
+      ease: "none"
+    });
+    gsap.to(line, {
+      scrollTrigger: {
+        trigger: line,
+        scrub: true,
+        start: "top bottom",
+        end: "top top"
+      },
+      xPercent: 15,
+      ease: "none"
+    });
+  })
+
+  reverses.forEach((reverse, index) => {
+    const content = reverse.querySelector('.content');
+    const clone = content
+      .cloneNode(true);
+
+    content.after(clone);
+
+    gsap.set(reverse, {
+      xPercent: 20,
+      ease: "none"
+    });
+    gsap.to(reverse, {
+      scrollTrigger: {
+        trigger: reverse,
+        scrub: true,
+        start: "top bottom",
+        end: "top top"
+      },
+      xPercent: -15,
+      ease: "none"
+    });
+  })
+
+</script>
+</body>
+</html>

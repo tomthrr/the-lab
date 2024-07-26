@@ -38,6 +38,7 @@ export default {
           dispersText: resolve(__dirname, 'src/disperse-text.html'),
           mouseCircle: resolve(__dirname, 'src/mouse-circle.html'),
           magneticButton: resolve(__dirname, 'src/magnetic-button.html'),
+          textParallax: resolve(__dirname, 'src/text-parallax.html'),
         }
       },
     },
