@@ -46,6 +46,21 @@
 <a class="close-icon">&lt;</a>
 <a class="code-icon" href="" target="_blank">&lt;&#47;&gt;</a>
 <script type="module">
+    const lenis = new Lenis();
+    document.addEventListener('DOMContentLoaded', () => {
+
+        function raf(time) {
+            lenis.raf(time)
+            requestAnimationFrame(raf)
+        }
+
+        requestAnimationFrame(raf)
+    })
+
+    /**
+     * Menu
+     */
+
     const projectsLinks = document.querySelectorAll('a.link');
     const iFrame = document.querySelector('.iframe');
     const closeButton = document.querySelector('.close-icon');
