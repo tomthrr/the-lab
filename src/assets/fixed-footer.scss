@@ -1,0 +1,105 @@
+.container-project {
+  position: relative;
+
+  .section {
+    z-index: 5;
+    display: flex;
+    height: 100vh;
+    justify-content: center;
+    align-items: center;
+    background-color: #0f0f0f;
+    color: white;
+    font-size: 5vw;
+    padding-bottom: 100vh;
+  }
+
+  .fixed-footer {
+    z-index: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    /* Clip path */
+    /* add a clip path to the sticky footer */
+    clip-path: polygon(0% 0, 100% 0%, 100% 100%, 0 100%);
+    min-height: 600px;
+
+    .overlay {
+      /* Position fixed */
+      position: fixed;
+      bottom: 0;
+      width: 100%;
+
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: 1rem;
+
+      .content {
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 1rem;
+        padding: 4rem 1rem;
+
+        width: 80%;
+        .left, .right {
+          display: flex;
+          flex-direction: column;
+
+          gap: .3rem;
+
+          p {
+            margin: 0;
+            font-size: 1.2rem;
+            transition: 0.3s color ease-in;
+            cursor: pointer;
+            width: fit-content;
+
+            &::after {
+              content: '';
+              width: 0px;
+              height: 1px;
+              display: block;
+              background: black;
+              transition: 300ms;
+            }
+
+            &:hover::after {
+              width: 100%;
+            }
+          }
+        }
+      }
+
+      .name {
+        font-size: 14vw;
+        font-weight: 700;
+
+        p {
+          margin: 2rem;
+        }
+      }
+
+      .footer {
+        width: 100%;
+        border-top: 1px solid #0f0f0f;
+        display: flex;
+        justify-content: center;
+
+        .wrapper {
+          display: flex;
+          flex-direction: row;
+          justify-content: space-between;
+          align-items: center;
+          gap: 1rem;
+          width: 80%;
+          font-size: .8rem;
+          opacity: 0.7;
+        }
+      }
+    }
+  }
+}

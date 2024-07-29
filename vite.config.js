@@ -39,6 +39,7 @@ export default {
           mouseCircle: resolve(__dirname, 'src/mouse-circle.html'),
           magneticButton: resolve(__dirname, 'src/magnetic-button.html'),
           textParallax: resolve(__dirname, 'src/text-parallax.html'),
+          stickyFooter: resolve(__dirname, 'src/fixed-footer.html'),
         }
       },
     },
