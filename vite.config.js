@@ -40,6 +40,7 @@ export default {
           magneticButton: resolve(__dirname, 'src/magnetic-button.html'),
           textParallax: resolve(__dirname, 'src/text-parallax.html'),
           stickyFooter: resolve(__dirname, 'src/fixed-footer.html'),
+          showcaseModel: resolve(__dirname, 'src/showcase-model.html'),
         }
       },
     },
