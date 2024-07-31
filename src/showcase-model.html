@@ -10,87 +10,195 @@
 
   <title>ThreeJS - Showcase Model</title>
   <link href="assets/main.scss" rel="stylesheet" />
+  <link href="assets/showcase-model.scss" rel="stylesheet" />
 </head>
 <body class="container-project">
-<div class="container"></div>
-<canvas class="webgl"></canvas>
-<script type="module">
-  import * as THREE from 'three'
+  <div class="container">
+    <canvas class="webgl"></canvas>
+    <section class="discover" id="discover">
+      <h1>A new way to discover the world</h1>
+      <p>Ultra simple, ultra fast, ultra efficient.</p>
+    </section>
+    <section class="story" id="story">
+      <p>Custom Apple silicon makes Apple Watch Series 9 more capable, more intuitive, and faster. The dual-core CPU has 5.6 billion transistors — 60 percent more than the S8 chip. A four-core Neural Engine processes machine learning tasks up to two times faster. It enables a number of innovations, including the double tap gesture.</p>
+    </section>
+    <section id="description">
+      <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. </p>
+    </section>
+  </div>
+  <script type="module">
+    import * as THREE from 'three'
+    import gsap from 'gsap'
+    import {ScrollTrigger} from "gsap/ScrollTrigger";
+    import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
+    import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js'
 
-  const canvas = document.querySelector('canvas.webgl');
+    import GUI from 'lil-gui'
 
-  const scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x0f0f0f);
+    gsap.registerPlugin(ScrollTrigger);
 
-  /*
-   *  Textures
-   */
-  const geometry = new THREE.BoxGeometry( 1, 1, 1 );
-  const material = new THREE.MeshBasicMaterial( {color: 0x00ff00} );
-  const cube = new THREE.Mesh( geometry, material );
-  scene.add( cube );
+    const canvas = document.querySelector('canvas.webgl');
 
-  /**
-   * Lights
-   */
+    const gui = new GUI()
 
-  /**
-   * Sizes
-   */
-  const sizes = {
-    width: window.innerWidth,
-    height: window.innerHeight
-  }
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0xffffff);
 
-  window.addEventListener('resize', () => {
-    //updates sizes
-    sizes.width = window.innerWidth
-    sizes.height = window.innerHeight
+    /*
+     *  Textures
+     */
+    // Draco Loader
+    const dracoLoader = new DRACOLoader()
+    dracoLoader.setDecoderPath('/algorithm/draco/')
 
-    camera.aspect = sizes.width / sizes.height
-    camera.updateProjectionMatrix()
+    // GLTF Loader
+    let gltfRef = null
+    const gltfLoader = new GLTFLoader()
+    gltfLoader.setDRACOLoader(dracoLoader)
+    gltfLoader.load(
+      '/textures/showcase-model/scene.gltf',
+      (gltf) => {
+        gltfRef = gltf
 
-    // Update renderer
+        gltf.scene.position.x = 1;
+        gltf.scene.position.y = 2;
+        gltf.scene.position.z = 2;
+
+        gui.add(gltf.scene.rotation, 'x').min(-5).max(5).step(0.01).name('x');
+        gui.add(gltf.scene.rotation, 'y').min(-5).max(5).step(0.01).name('y');
+        gui.add(gltf.scene.rotation, 'z').min(-5).max(5).step(0.01).name('z');
+
+        gltf.scene.add(new THREE.AxesHelper(5))
+
+        gltf.scene.scale.set(25, 25, 25)
+        scene.add(gltf.scene)
+
+        // X: red     y: green    z:  blue.
+
+        gsap.to(gltfRef.scene.position, {
+          x: 1,
+          y: 0,
+          z: 1,
+          duration: 1,
+          animation: 'power1.inOut',
+        });
+
+        gsap.to(gltfRef.scene.rotation, {
+          x: 0,
+          y: .2,
+          z: 0,
+          duration: 1,
+          animation: 'power1.inOut',
+        });
+
+        let timelineDiscover = gsap.timeline({
+          scrollTrigger: {
+            trigger: '#discover',
+            start: 'top top',
+            end: 'bottom top',
+            scrub: true,
+            markers: true,
+          }
+        })
+
+        timelineDiscover.to(gltfRef.scene.position, {
+          x: 1,
+          y: 0,
+          z: 1.5,
+          animation: 'power1.inOut',
+        }).to(gltfRef.scene.rotation, {
+          x: .5,
+          y: -.3,
+        })
+
+        let timelineStory = gsap.timeline({
+          scrollTrigger: {
+            trigger: '#story',
+            start: 'top top',
+            end: 'bottom top',
+            scrub: true,
+            markers: true,
+          }
+        })
+
+        timelineStory.to(gltfRef.scene.position, {
+          x: 0,
+          y: -.5,
+          z: 2.5,
+          animation: 'power1.inOut',
+        }).to(gltfRef.scene.rotation, {
+          x: 1.68,     //rouge
+          y: -2.53,     //vert
+          z: 1.56,     //bleu
+        })
+      }
+    )
+
+    /**
+     * Lights
+     */
+
+    const ambientLight = new THREE.AmbientLight(0xFFFFFF);
+    ambientLight.intensity = 4;
+    scene.add( ambientLight );
+
+    /**
+     * Sizes
+     */
+    const sizes = {
+      width: window.innerWidth,
+      height: window.innerHeight
+    }
+
+    window.addEventListener('resize', () => {
+      //updates sizes
+      sizes.width = window.innerWidth
+      sizes.height = window.innerHeight
+
+      camera.aspect = sizes.width / sizes.height
+      camera.updateProjectionMatrix()
+
+      // Update renderer
+      renderer.setSize(sizes.width, sizes.height)
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+    })
+
+    /**
+     * Camera
+     */
+      // Base camera
+    const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 100)
+    camera.position.x = 0
+    camera.position.y = 0
+    camera.position.z = 4
+    scene.add(camera)
+
+    /**
+     * Renderer
+     */
+    const renderer = new THREE.WebGLRenderer({
+      canvas: canvas
+    })
     renderer.setSize(sizes.width, sizes.height)
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
-  })
 
-  /**
-   * Camera
-   */
-    // Base camera
-  const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 100)
-  camera.position.x = 0
-  camera.position.y = 0
-  camera.position.z = 2
-  scene.add(camera)
+    /**
+     * Animate
+     */
+    const clock = new THREE.Clock()
 
-  /**
-   * Renderer
-   */
-  const renderer = new THREE.WebGLRenderer({
-    canvas: canvas
-  })
-  renderer.setSize(sizes.width, sizes.height)
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+    const tick = () =>
+    {
+      const elapsedTime = clock.getElapsedTime();
 
-  /**
-   * Animate
-   */
-  const clock = new THREE.Clock()
+      // Render
+      renderer.render(scene, camera);
 
-  const tick = () =>
-  {
-    const elapsedTime = clock.getElapsedTime()
+      // Call tick again on the next frame
+      window.requestAnimationFrame(tick);
+    }
 
-    // Render
-    renderer.render(scene, camera)
-
-    // Call tick again on the next frame
-    window.requestAnimationFrame(tick)
-  }
-
-  tick()
-</script>
+    tick();
+  </script>
 </body>
 </html>

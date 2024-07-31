@@ -1,0 +1,66 @@
+.container-project {
+  position: relative;
+
+  h1 {
+    font-size: 7vmin;
+    margin: 0;
+  }
+
+  p {
+    font-size: 2vmin;
+    margin: 0;
+  }
+
+  .intro {
+    z-index: 10;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    background-color: #0f0f0f;
+    color: white;
+  }
+
+  .webgl {
+    position: fixed;
+    top: 0;
+    left: 0;
+    outline: none;
+  }
+
+  .container {
+    position: relative;
+    font-family: 'Cabin', sans-serif;
+    color: #0f0f0f;
+    text-transform: uppercase;
+
+    section {
+      display: flex;
+      align-items: center;
+      height: 100vh;
+      position: relative;
+
+      padding-left: 10%;
+      padding-right: 10%;
+
+      &.discover {
+        display: flex;
+        justify-content: center;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+        width: 50%;
+      }
+
+      &.story {
+        display: flex;
+        justify-content: center;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+        width: 40%;
+      }
+    }
+  }
+}
