@@ -1,14 +1,25 @@
 .container-project {
   position: relative;
 
+  &.locked {
+    background-color: orangered;
+    height: 100vh;
+    overflow: hidden;
+  }
+
   h1 {
     font-size: 7vmin;
     margin: 0;
   }
 
   p {
-    font-size: 2vmin;
-    margin: 0;
+    color: darkgrey;
+    font-size: 2.5vmin;
+  }
+
+  span {
+    font-weight: 600;
+    color: black;
   }
 
   .intro {
@@ -41,10 +52,9 @@
       height: 100vh;
       position: relative;
 
-      padding-left: 10%;
-      padding-right: 10%;
-
       &.discover {
+        padding-left: 10%;
+        padding-right: 10%;
         display: flex;
         justify-content: center;
         flex-direction: column;
@@ -54,12 +64,31 @@
       }
 
       &.story {
+        padding-left: 10%;
+        padding-right: 10%;
         display: flex;
         justify-content: center;
         flex-direction: column;
         align-items: flex-start;
         gap: 1rem;
         width: 40%;
+      }
+
+      &.description {
+        display: flex;
+        justify-content: center;
+        flex-direction: column;
+        width: 100%;
+
+        .infos {
+          width: 40%;
+          display: flex;
+          justify-content: center;
+          flex-direction: column;
+          align-items: center;
+          gap: 1rem;
+          padding-top: 12rem;
+        }
       }
     }
   }

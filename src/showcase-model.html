@@ -13,17 +13,19 @@
   <link href="assets/showcase-model.scss" rel="stylesheet" />
 </head>
 <body class="container-project">
-  <div class="container">
+  <div class="container" id="main-container">
     <canvas class="webgl"></canvas>
     <section class="discover" id="discover">
       <h1>A new way to discover the world</h1>
       <p>Ultra simple, ultra fast, ultra efficient.</p>
     </section>
     <section class="story" id="story">
-      <p>Custom Apple silicon makes Apple Watch Series 9 more capable, more intuitive, and faster. The dual-core CPU has 5.6 billion transistors — 60 percent more than the S8 chip. A four-core Neural Engine processes machine learning tasks up to two times faster. It enables a number of innovations, including the double tap gesture.</p>
+      <p>Custom Apple silicon makes <span>Apple Watch</span> Series 9 more capable, more intuitive, and faster. The dual-core CPU has 5.6 billion transistors — 60 percent more than the S8 chip. A four-core Neural Engine processes machine learning tasks up to two times faster. It enables a number of innovations, including the double tap gesture.</p>
     </section>
-    <section id="description">
-      <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. </p>
+    <section class="description" id="description">
+      <div class="infos">
+        <p><span>Trail Loop.</span> Ultrathin, lightweight, and stretchy band with a convenient pull tab for quick adjustments. Made for everyday wear and all types of workouts.</p>
+      </div>
     </section>
   </div>
   <script type="module">
@@ -32,10 +34,15 @@
     import {ScrollTrigger} from "gsap/ScrollTrigger";
     import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
     import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js'
-
     import GUI from 'lil-gui'
 
     gsap.registerPlugin(ScrollTrigger);
+
+    const bodyContainer = document.querySelector('.container-project');
+    bodyContainer.classList.add('locked');
+
+    console.log(bodyContainer)
+
 
     const canvas = document.querySelector('canvas.webgl');
 
@@ -68,71 +75,81 @@
         gui.add(gltf.scene.rotation, 'y').min(-5).max(5).step(0.01).name('y');
         gui.add(gltf.scene.rotation, 'z').min(-5).max(5).step(0.01).name('z');
 
-        gltf.scene.add(new THREE.AxesHelper(5))
+        //gltf.scene.add(new THREE.AxesHelper(5));
 
-        gltf.scene.scale.set(25, 25, 25)
-        scene.add(gltf.scene)
+        gltf.scene.scale.set(25, 25, 25);
+        scene.add(gltf.scene);
 
-        // X: red     y: green    z:  blue.
-
-        gsap.to(gltfRef.scene.position, {
-          x: 1,
-          y: 0,
-          z: 1,
-          duration: 1,
-          animation: 'power1.inOut',
-        });
-
-        gsap.to(gltfRef.scene.rotation, {
-          x: 0,
-          y: .2,
-          z: 0,
-          duration: 1,
-          animation: 'power1.inOut',
-        });
-
-        let timelineDiscover = gsap.timeline({
-          scrollTrigger: {
-            trigger: '#discover',
-            start: 'top top',
-            end: 'bottom top',
-            scrub: true,
-            markers: true,
-          }
-        })
-
-        timelineDiscover.to(gltfRef.scene.position, {
-          x: 1,
-          y: 0,
-          z: 1.5,
-          animation: 'power1.inOut',
-        }).to(gltfRef.scene.rotation, {
-          x: .5,
-          y: -.3,
-        })
-
-        let timelineStory = gsap.timeline({
-          scrollTrigger: {
-            trigger: '#story',
-            start: 'top top',
-            end: 'bottom top',
-            scrub: true,
-            markers: true,
-          }
-        })
-
-        timelineStory.to(gltfRef.scene.position, {
-          x: 0,
-          y: -.5,
-          z: 2.5,
-          animation: 'power1.inOut',
-        }).to(gltfRef.scene.rotation, {
-          x: 1.68,     //rouge
-          y: -2.53,     //vert
-          z: 1.56,     //bleu
-        })
+        animate();
       }
     )
+
+    function animate( ) {
+      gsap.to(gltfRef.scene.position, {
+        x: 1,
+        y: 0,
+        z: 1,
+        duration: 1,
+      });
+
+      gsap.to(gltfRef.scene.rotation, {
+        x: 0,
+        y: .2,
+        z: 0,
+        duration: 1,
+        onComplete: () => {
+          bodyContainer.classList.remove('locked');
+        }
+      });
+
+      let timelineDiscover = gsap.timeline({
+        scrollTrigger: {
+          trigger: '#discover',
+          start: 'top top',
+          end: 'bottom top',
+          scrub: true,
+        }
+      })
+
+      timelineDiscover.to(gltfRef.scene.position, {
+        x: 1,
+        y: 0,
+        z: 1.5,
+      }).to(gltfRef.scene.rotation, {
+        x: .5,
+        y: -.3,
+      })
+
+      let timelineStory = gsap.timeline({
+        scrollTrigger: {
+          trigger: '#story',
+          start: 'top top',
+          end: 'bottom top',
+          scrub: true,
+        }
+      })
+
+      timelineStory.to(gltfRef.scene.position, {
+        x: 0,
+        y: -.2,
+        z: 2.5,
+        duration: 1,
+      })
+
+      let timelineStory2 = gsap.timeline({
+        scrollTrigger: {
+          trigger: '#story',
+          start: 'top top',
+          end: 'bottom top',
+          scrub: true,
+        }
+      })
+      timelineStory2.to(gltfRef.scene.rotation, {
+        x: 1.68,
+        y: -2.53,
+        z: 1.56,
+      })
+    }
 
     /**
      * Lights
@@ -199,6 +216,39 @@
     }
 
     tick();
+
+
+    /**
+     * Content Animation
+     */
+    gsap.from('.discover', {
+      y: 100,
+      opacity: 0,
+      duration: 1,
+      delay: 1,
+    });
+
+    gsap.from('.story', {
+      scrollTrigger: {
+        trigger: '.story',
+        start: 'top +=300 top',
+        end: 'bottom top',
+      },
+      y: 100,
+      opacity: 0,
+      duration: 1,
+    });
+
+    gsap.from('.description', {
+      scrollTrigger: {
+        trigger: '.description',
+        start: 'top +=300 top',
+        end: 'bottom top',
+      },
+      y: 100,
+      opacity: 0,
+      duration: 1,
+    });
   </script>
 </body>
 </html>
