@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+  <meta
+          name="viewport"
+          content="width=device-width, minimal-ui, viewport-fit=cover, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no"
+  />
+
+  <title>ThreeJS - 3D Cube</title>
+  <link href="assets/main.scss" rel="stylesheet" />
+</head>
+<body class="container-project">
+<div class="container"></div>
+<canvas class="webgl"></canvas>
+<script type="module">
+  import * as THREE from 'three'
+  import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
+  import GUI from 'lil-gui'
+  import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
+  import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader.js'
+
+  /**
+   * Loaders
+   */
+  const gltfLoader = new GLTFLoader()
+  const rgbeLoader = new RGBELoader()
+  const textureLoader = new THREE.TextureLoader();
+
+  /**
+   * Base
+   */
+// Debug
+  const gui = new GUI()
+
+  // Canvas
+  const canvas = document.querySelector('canvas.webgl')
+
+  // Scene
+  const scene = new THREE.Scene()
+
+  /**
+   * Lights
+   */
+
+  const directionalLight = new THREE.DirectionalLight('#ffffff', 6);
+  directionalLight.position.set(- 4, 6.5, 2.5)
+  directionalLight.target.position.set(0, 4, 0);
+  directionalLight.target.updateMatrix(); // Update the matrix
+  directionalLight.shadow.camera.far = 15; // How far the light is going
+  directionalLight.shadow.mapSize.set(512, 512); // Increase the quality for a better renderer, but carefull, here we have only one light...
+  scene.add(directionalLight);
+
+
+  gui.add(directionalLight, ('intensity')).min(0).max(10).step(0.1);
+  gui.add(directionalLight.position, ('x')).min(-10).max(10).step(0.1);
+  gui.add(directionalLight.position, ('y')).min(-10).max(10).step(0.1);
+  gui.add(directionalLight.position, ('z')).min(-10).max(10).step(0.1);
+
+  /**
+   * Update all materials
+   */
+  const updateAllMaterials = () =>
+  {
+    scene.traverse((child) =>
+    {
+      if(child.isMesh)
+      {
+        // Activate shadow here
+        child.castShadow = true
+        child.receiveShadow = true
+      }
+    })
+  }
+
+  /**
+   * Floor
+   */
+
+  /**
+   * Floor
+   */
+
+  const floorColorTexture = textureLoader.load('/textures/realistic-renderer/textures/wood_cabinet_worn_long/wood_cabinet_worn_long_diff_1k.jpg')
+  const floorNormalTexture = textureLoader.load('/textures/realistic-renderer/textures/wood_cabinet_worn_long/wood_cabinet_worn_long_nor_gl_1k.png')
+  const floorAORoughnessMetalnessTexture = textureLoader.load('/textures/realistic-renderer/textures/wood_cabinet_worn_long/wood_cabinet_worn_long_arm_1k.jpg')
+
+  const wallColorTexture = textureLoader.load('/textures/realistic-renderer/textures/castle_brick_broken_06/castle_brick_broken_06_diff_1k.jpg')
+  const wallNormalTexture = textureLoader.load('/textures/realistic-renderer/textures/castle_brick_broken_06/castle_brick_broken_06_nor_gl_1k.png')
+  const wallAORoughnessMetalnessTexture = textureLoader.load('/textures/realistic-renderer/textures/castle_brick_broken_06/castle_brick_broken_06_arm_1k.jpg')
+
+  /**
+   * Environment map
+   */
+  // Intensity
+  scene.environmentIntensity = 1
+  gui
+    .add(scene, 'environmentIntensity')
+    .min(0)
+    .max(10)
+    .step(0.001)
+
+  // HDR (RGBE) equirectangular
+  rgbeLoader.load('/textures/realistic-renderer/environmentMaps/0/2k.hdr', (environmentMap) =>
+  {
+    environmentMap.mapping = THREE.EquirectangularReflectionMapping
+
+    scene.background = environmentMap
+    scene.environment = environmentMap
+  })
+
+  /**
+   * Models
+   */
+  // Helmet
+  gltfLoader.load(
+    '/textures/realistic-renderer/models/FlightHelmet/glTF/FlightHelmet.gltf',
+    (gltf) =>
+    {
+      gltf.scene.scale.set(10, 10, 10)
+      scene.add(gltf.scene)
+
+      updateAllMaterials()
+    }
+  )
+
+  // Floor
+  const floor = new THREE.Mesh(
+    new THREE.PlaneGeometry(8, 8),
+    new THREE.MeshStandardMaterial({
+      map: floorColorTexture,
+      normalMap: floorNormalTexture,
+      aoMap: floorAORoughnessMetalnessTexture,
+      roughnessMap: floorAORoughnessMetalnessTexture,
+      metalnessMap: floorAORoughnessMetalnessTexture,
+    })
+  )
+  floor.rotation.x = - Math.PI / 2
+  scene.add(floor);
+
+  // Floor
+  const wall = new THREE.Mesh(
+    new THREE.PlaneGeometry(8, 8),
+    new THREE.MeshStandardMaterial({
+      map: wallColorTexture,
+      normalMap: wallNormalTexture,
+      aoMap: wallAORoughnessMetalnessTexture,
+      roughnessMap: wallAORoughnessMetalnessTexture,
+      metalnessMap: wallAORoughnessMetalnessTexture,
+    })
+  )
+  wall.rotation.x = Math.PI
+  wall.rotation.y = Math.PI
+  wall.position.y = 4
+  wall.position.z = -4
+  scene.add(wall);
+
+  /**
+   * Sizes
+   */
+  const sizes = {
+    width: window.innerWidth,
+    height: window.innerHeight
+  }
+
+  window.addEventListener('resize', () =>
+  {
+    // Update sizes
+    sizes.width = window.innerWidth
+    sizes.height = window.innerHeight
+
+    // Update camera
+    camera.aspect = sizes.width / sizes.height
+    camera.updateProjectionMatrix()
+
+    // Update renderer
+    renderer.setSize(sizes.width, sizes.height)
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+  })
+
+  /**
+   * Camera
+   */
+// Base camera
+  const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 100)
+  camera.position.set(4, 5, 4)
+  scene.add(camera)
+
+  // Controls
+  const controls = new OrbitControls(camera, canvas)
+  controls.target.y = 3.5
+  controls.enableDamping = true
+
+  /**
+   * Renderer
+   */
+  const renderer = new THREE.WebGLRenderer({
+    antialias: true,
+    canvas: canvas
+  })
+  renderer.setSize(sizes.width, sizes.height)
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+
+  // Shadows
+  renderer.shadowMap.enabled =  true;
+  renderer.shadowMap.type = THREE.PCFShadowMap;
+
+  directionalLight.castShadow = true;
+  gui.add(directionalLight, 'castShadow');
+
+  const directHelper = new THREE.CameraHelper(directionalLight.shadow.camera);
+  scene.add(directHelper);
+
+  // Tone mapping
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 3;
+
+  gui.add(renderer, 'toneMapping', {
+    No: THREE.NoToneMapping,
+    Linear: THREE.LinearToneMapping,
+    Reinhard: THREE.ReinhardToneMapping,
+    Cineon: THREE.CineonToneMapping,
+    ACESFilmic: THREE.ACESFilmicToneMapping
+  })
+
+  gui.add(renderer, 'toneMappingExposure').min(0).max(10).step(0.01);
+
+  /**
+   * Animate
+   */
+  const tick = () =>
+  {
+    // Update controls
+    controls.update()
+
+    // Render
+    renderer.render(scene, camera)
+
+    // Call tick again on the next frame
+    window.requestAnimationFrame(tick)
+  }
+
+  tick()
+</script>
+</body>
+</html>

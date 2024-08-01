@@ -41,6 +41,7 @@ export default {
           textParallax: resolve(__dirname, 'src/text-parallax.html'),
           stickyFooter: resolve(__dirname, 'src/fixed-footer.html'),
           showcaseModel: resolve(__dirname, 'src/showcase-model.html'),
+          realisticRenderer: resolve(__dirname, 'src/realistic-renderer.html'),
         }
       },
     },
