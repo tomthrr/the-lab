@@ -1,0 +1,137 @@
+.container-project {
+
+  .lg-blue {
+    background-color: #C0DBEA;
+  }
+
+  .lg-purple {
+    background-color: #BA90C6;
+  }
+
+  .lg-pink {
+    background-color: #E8A0BF;
+  }
+
+  .lg-creme {
+    background-color: #FDF4F5;
+  }
+
+  .container {
+    margin-top: 100vh;
+    margin-bottom: 70vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 10rem;
+    width: 100%;
+    position: relative;
+
+    .project {
+      transform-origin: top;
+      display: flex;
+      justify-content: space-between;
+      flex-direction: row;
+      align-items: center;
+      height: 100vh;
+      scale: 1;
+      top: 0;
+      position: sticky;
+
+      .wrapper {
+        position: relative;
+        display: flex;
+        justify-content: space-between;
+        flex-direction: row;
+        align-items: flex-start;
+
+        border: 2px solid black;
+        border-radius: 32px;
+        padding: 2rem 1rem;
+        transform-origin: top;
+        top: 150px;
+
+        .left {
+          width: 450px;
+          height: 500px;
+          position: relative;
+          overflow: hidden;
+          border: 2px solid black;
+          border-radius: 32px;
+
+          &:hover {
+            cursor: pointer;
+          }
+
+          .link {
+            position: absolute;
+            z-index: 4;
+            top: 45%;
+            left: 45%;
+
+            display: flex;
+            justify-content: center;
+            align-items: center;
+
+            width: 50px;
+            height: 50px;
+
+            border-radius: 50%;
+            background-color: black;
+            color: white;
+            opacity: 0;
+            user-select: none;
+
+            p {
+              transform: rotate(45deg);
+              font-size: 1.5rem;
+            }
+          }
+
+          img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            scale: 1.3;
+          }
+        }
+
+        .right {
+          width: 50%;
+          height: 100%;
+
+          .title {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            flex-direction: row;
+            cursor: pointer;
+
+            h1 {
+              font-size: 4vmin;
+            }
+
+            .infos {
+              width: fit-content;
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              gap: 1rem;
+
+              .vignette {
+                padding: .5rem .5rem;
+                border-radius: 32px;
+                border: 2px solid black;
+              }
+            }
+          }
+
+          p {
+
+          }
+        }
+      }
+    }
+  }
+}

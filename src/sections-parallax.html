@@ -10,9 +10,170 @@
 
   <title>ThreeJS - Sections Parallax</title>
   <link href="assets/main.scss" rel="stylesheet" />
+  <link href="assets/sections-parallax.scss" rel="stylesheet" />
 </head>
 <body class="container-project">
+  <div class="container">
+    <section class="project">
+      <div class="wrapper lg-blue">
+        <div class="left">
+          <div class="link">
+            <p>↑</p>
+          </div>
+          <img src="/textures/3d_cube/1.jpg" alt="Project image" />
+        </div>
+        <div class="right">
+          <div class="title">
+            <h1>The lab</h1>
+            <div class="infos">
+              <div class="vignette lg-creme">2024</div>
+              <div class="vignette lg-creme">Personnal</div>
+            </div>
+          </div>
+          <p>The lab is a collection of experiments made with ThreeJS, GSAP and WebGL. The goal is to create, or reproduce, some cool effects and animations that can be used in a website or a web application.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="project ">
+      <div class="wrapper lg-purple">
+        <div class="left">
+          <div class="link">
+            <p>↑</p>
+          </div>
+          <img src="/textures/3d_cube/2.jpg" alt="Project image" />
+        </div>
+        <div class="right">
+          <div class="title">
+            <h1>Cocotte</h1>
+            <div class="infos">
+              <div class="vignette lg-blue">2024</div>
+              <div class="vignette lg-blue">Personnal</div>
+            </div>
+          </div>
+          <p>Cocotte is an application of kids story telling. The goal is to create a fun and interactive way to tell stories to kids. The app is made with React, ThreeJS and GSAP.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="project">
+      <div class="wrapper lg-pink">
+        <div class="left">
+          <div class="link">
+            <p>↑</p>
+          </div>
+          <img src="/textures/3d_cube/3.jpg" alt="Project image" />
+        </div>
+        <div class="right">
+          <div class="title">
+            <h1>Huffle the puffle</h1>
+            <div class="infos">
+              <div class="vignette lg-purple">2024</div>
+              <div class="vignette lg-purple">Personnal</div>
+            </div>
+          </div>
+          <p>
+            Huffle the puffle is a little game. You have to help Huffle to find his way back home. The game is made with ThreeJS, GSAP and WebGL.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section class="project">
+      <div class="wrapper lg-creme">
+        <div class="left">
+          <div class="link">
+            <p>↑</p>
+          </div>
+          <img src="/textures/3d_cube/4.webp" alt="Project image" />
+        </div>
+        <div class="right">
+          <div class="title">
+            <h1>Cocotte</h1>
+            <div class="infos">
+              <div class="vignette lg-pink">2024</div>
+              <div class="vignette lg-pink">Personnal</div>
+            </div>
+          </div>
+          <p>Cocotte is an application of kids story telling. The goal is to create a fun and interactive way to tell stories to kids. The app is made with React, ThreeJS and GSAP.</p>
+        </div>
+      </div>
+    </section>
+  </div>
   <script type="module">
+    import gsap from 'gsap'
+    import {ScrollTrigger} from "gsap/ScrollTrigger";
+
+    gsap.registerPlugin(ScrollTrigger);
+
+    const projects = document.querySelectorAll('.project');
+
+    const lefts = document.querySelectorAll('.left');
+    const links = document.querySelectorAll('.link');
+
+    hoverImages();
+
+
+    function hoverImages() {
+      projects.forEach((project, index) => {
+        const wrapper = project.querySelector('.wrapper')
+        const left = wrapper.querySelector('.left')
+
+        /**
+         * Scale animation
+         */
+
+        wrapper.style.top = `calc(50px + ${index} * 20px`
+
+        const scaleValue = 1 - ((projects.length - index) * 0.05);
+
+        gsap.to(project, {
+          scale: scaleValue,
+          scrollTrigger: {
+            trigger: project,
+            scrub: true,
+            start: 'bottom bottom',
+          }
+        })
+
+        /**
+         * Image animation
+         */
+        const image = left.querySelector('img');
+
+        gsap.to(image, {
+          scale: 1,
+          duration: 1,
+          scrollTrigger: {
+            trigger: image,
+            scrub: true,
+            start: 'bottom bottom',
+          }
+        })
+
+
+        /**
+         * Links
+         */
+        const link = left.querySelector('.link');
+
+        left.addEventListener('mouseenter', () => {
+          gsap.to(link, {
+            opacity: 1,
+            duration: 0.5,
+            ease: 'power3.inOut'
+          });
+        })
+
+        left.addEventListener('mouseleave', () => {
+          gsap.to(link, {
+            opacity: 0,
+            duration: 0.5,
+            ease: 'power3.inOut',
+          });
+        })
+      })
+    }
   </script>
 </body>
 </html>
