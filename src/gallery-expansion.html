@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+  <meta
+          name="viewport"
+          content="width=device-width, minimal-ui, viewport-fit=cover, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no"
+  />
+
+  <title>The lab - Gallery Expansion</title>
+  <link href="assets/main.scss" rel="stylesheet" />
+  <link href="assets/gallery-expansion.scss" rel="stylesheet" />
+</head>
+<body class="container-project">
+  <div class="container">
+    <div class="gallery">
+      <div class="item">
+        <img src="/textures/3d_cube/1.jpg" alt="Impressionnism" />
+      </div>
+      <div class="item">
+        <img src="/textures/3d_cube/2.jpg" alt="Impressionnism" />
+      </div>
+      <div class="item">
+        <img src="/textures/3d_cube/3.jpg" alt="Impressionnism" />
+      </div>
+      <div class="item">
+        <img src="/textures/3d_cube/4.webp" alt="Impressionnism" />
+      </div>
+      <div class="item">
+        <img src="/textures/3d_cube/5.webp" alt="Impressionnism" />
+      </div>
+    </div>
+  </div>
+  <script type="module">
+    import gsap from "gsap";
+    const items = document.querySelectorAll('.item');
+
+    items.forEach((item) => {
+      const img = item.querySelector('img');
+
+      item.addEventListener('mouseenter', () => {
+        gsap.to(item, {
+          width: 300,
+          duration: 0.5,
+        })
+        gsap.to(img, {
+          scale: 1.1,
+          duration: .5
+        })
+      })
+      item.addEventListener('mouseleave', () => {
+        gsap.to(item, {
+          width: 150,
+          duration: 0.5,
+        })
+        gsap.to(img, {
+          scale: 1,
+          duration: .5
+        })
+      })
+    })
+  </script>
+</body>
+</html>
