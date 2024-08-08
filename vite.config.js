@@ -44,6 +44,7 @@ export default {
           realisticRenderer: resolve(__dirname, 'src/realistic-renderer.html'),
           sectionsParallax: resolve(__dirname, 'src/sections-parallax.html'),
           galleryExpansion: resolve(__dirname, 'src/gallery-expansion.html'),
+          cardsSlider: resolve(__dirname, 'src/cards-slider.html'),
         }
       },
     },
