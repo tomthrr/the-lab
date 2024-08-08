@@ -43,6 +43,7 @@ export default {
           showcaseModel: resolve(__dirname, 'src/showcase-model.html'),
           realisticRenderer: resolve(__dirname, 'src/realistic-renderer.html'),
           sectionsParallax: resolve(__dirname, 'src/sections-parallax.html'),
+          galleryExpansion: resolve(__dirname, 'src/gallery-expansion.html'),
         }
       },
     },
