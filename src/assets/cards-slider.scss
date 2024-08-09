@@ -72,8 +72,12 @@
       align-items: center;
       display: flex;
       position: relative;
+      width: 100%;
+      left: 30%;
+      right: 30%;
 
       .card {
+        border: 1px solid #0f0f0f;
         left: 0;
         position: absolute;
         height: 350px;

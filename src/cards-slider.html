@@ -28,13 +28,19 @@
     <div class="slider">
       <div class="cards-container">
         <div class="card">
-          <img src="/textures/3d_cube/1.jpg" alt="work"/>
+          <div class="wrapper">
+            <img src="/textures/3d_cube/1.jpg" alt="work"/>
+          </div>
         </div>
         <div class="card">
-          <img src="/textures/3d_cube/2.jpg" alt="work"/>
+          <div class="wrapper">
+            <img src="/textures/3d_cube/2.jpg" alt="work"/>
+          </div>
         </div>
         <div class="card">
-          <img src="/textures/3d_cube/3.jpg" alt="work"/>
+          <div class="wrapper">
+            <img src="/textures/3d_cube/3.jpg" alt="work"/>
+          </div>
         </div>
       </div>
     </div>
@@ -61,9 +67,8 @@
     import gsap from "gsap";
     import {Draggable} from "gsap/Draggable";
     import {ScrollTrigger} from "gsap/ScrollTrigger";
-    import {InertiaPlugin} from "gsap/InertiaPlugin";
 
-    gsap.registerPlugin(Draggable, ScrollTrigger, InertiaPlugin);
+    gsap.registerPlugin(Draggable, ScrollTrigger);
 
     const cardsContainer = document.querySelector('.cards-container');
     const cards = document.querySelectorAll('.card');
@@ -121,6 +126,8 @@
       })
     })
 
+
+
     Draggable.create((cardsContainer), {
       type: "x",
       bounds: {
@@ -128,19 +135,16 @@
         maxX: 0
       },
       onDrag: () => {
-        direction = this.deltaX;
+        direction = gsap.getProperty(cardsContainer, 'x') > Draggable.get(cardsContainer).startX ? 1 : -1;
       },
-      inertia: true,
-      snap: {
-        x: () => {
-          if (direction < 0 && currentIndex < gCards.length - 1) {
-            currentIndex++;
-          } else if (direction > 0 && currentIndex > 0) {
-            currentIndex--;
-          }
-          return snapPoints[currentIndex];
+      onDragEnd: () => {
+        if (direction === -1 && currentIndex < gCards.length - 1) {
+          currentIndex++;
+        } else if (direction === 1 && currentIndex > 0) {
+          currentIndex--;
         }
-      }
+        highlightLoaderPart(currentIndex);
+      },
     })
 
     function nextCard() {
