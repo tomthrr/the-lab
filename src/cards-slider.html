@@ -10,12 +10,162 @@
 
   <title>The lab - Cards Slider</title>
   <link href="assets/main.scss" rel="stylesheet" />
+  <link href="assets/cards-slider.scss" rel="stylesheet" />
 </head>
 <body class="container-project">
   <div class="container">
+    <div class="hero-banner">
+      <div class="title">
+        <p><span>L</span>ouvr<span>E</span></p>
+      </div>
+    </div>
 
+    <div class="debugger">
+      <div class="prev">&lsaquo;</div>
+      <div class="next">&rsaquo;</div>
+    </div>
+
+    <div class="slider">
+      <div class="cards-container">
+        <div class="card">
+          <img src="/textures/3d_cube/1.jpg" alt="work"/>
+        </div>
+        <div class="card">
+          <img src="/textures/3d_cube/2.jpg" alt="work"/>
+        </div>
+        <div class="card">
+          <img src="/textures/3d_cube/3.jpg" alt="work"/>
+        </div>
+      </div>
+    </div>
+    <div class="hero-footer">
+      <div class="infos">
+        <div class="left button">
+          <p>Exhibitions</p>
+        </div>
+        <div  class="accroche">
+          <p>Discover the best works of our world.</p>
+        </div>
+        <div class="right button">
+          <p>Buy a ticket</p>
+        </div>
+      </div>
+      <div class="loader">
+        <div class="part 1"></div>
+        <div class="part 2"></div>
+        <div class="part 3"></div>
+      </div>
+    </div>
   </div>
   <script type="module">
+    import gsap from "gsap";
+    import {Draggable} from "gsap/Draggable";
+    import {ScrollTrigger} from "gsap/ScrollTrigger";
+    import {InertiaPlugin} from "gsap/InertiaPlugin";
+
+    gsap.registerPlugin(Draggable, ScrollTrigger, InertiaPlugin);
+
+    const cardsContainer = document.querySelector('.cards-container');
+    const cards = document.querySelectorAll('.card');
+    const gCards = gsap.utils.toArray('.card');
+    const snapPoints = gCards.map((item, index) => {
+      return -index * (cards[0].clientWidth + 250);
+    })
+    let direction;
+    const cardsWidth = cards[0].clientWidth;
+
+    const loader = document.querySelector('.loader');
+    const loaderParts = document.querySelectorAll('.loader div.part');
+
+    const prev = document.querySelector('.prev');
+    const next = document.querySelector('.next');
+
+    let currentIndex = 0;
+
+    loaderParts.forEach((item, index) => {
+      if (index === 0) {
+        gsap.set(item, {
+          duration:0.5,
+          opacity: 0.8
+        })
+      } else {
+        gsap.set(item, {
+          opacity: 0.3
+        })
+      }
+    })
+
+    next.addEventListener('click', {
+      handleEvent: () => {
+        if (currentIndex < cards.length - 1) {
+
+          currentIndex++;
+
+        }
+        nextCard();
+      }
+    });
+
+    prev.addEventListener('click', {
+      handleEvent: () => {
+        if (currentIndex > 0) {
+          currentIndex--;
+        }
+        nextCard();
+      }
+    });
+
+    cards.forEach((item, index) => {
+      gsap.set(item, {
+        translateX: index * (cardsWidth + 250),
+      })
+    })
+
+    Draggable.create((cardsContainer), {
+      type: "x",
+      bounds: {
+        minX: snapPoints[gCards.length - 1],
+        maxX: 0
+      },
+      onDrag: () => {
+        direction = this.deltaX;
+      },
+      inertia: true,
+      snap: {
+        x: () => {
+          if (direction < 0 && currentIndex < gCards.length - 1) {
+            currentIndex++;
+          } else if (direction > 0 && currentIndex > 0) {
+            currentIndex--;
+          }
+          return snapPoints[currentIndex];
+        }
+      }
+    })
+
+    function nextCard() {
+      cards.forEach((item, index) => {
+        gsap.to(item, {
+          translateX: (index - currentIndex) * (cardsWidth + 250),
+        })
+        highlightLoaderPart(currentIndex);
+      })
+    }
+
+    function highlightLoaderPart(index) {
+      loaderParts.forEach((item, i) => {
+        if (i === index) {
+          gsap.to(item, {
+            duration: 0.5,
+            opacity: 0.8
+          })
+        } else {
+          gsap.to(item, {
+            opacity: 0.3
+          })
+        }
+      })
+    }
 
   </script>
 </body>
