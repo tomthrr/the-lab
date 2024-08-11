@@ -73,22 +73,45 @@
         font-size: 50px;
         font-weight: 600;
 
-        background-color: white;
-        border-radius: 1rem;
         margin-right: 15rem;
 
+        transition: transform 0.1s ease-out;
+        inset: 0;
+        position: relative;
+
+        &:hover {
+          transform: rotateY(var(--y-rotation)) rotateX(var(--x-rotation)) scale(1.1);
+        }
+
+        &:first-child {
+          margin-left: 15rem;
+        }
+
         .wrapper {
-          border: 1px solid #0f0f0f;
+          border: 2px solid #543310;
           left: 0;
           height: 350px;
           width: 500px;
           overflow: hidden;
+          cursor: pointer;
 
           img {
             width: 100%;
             height: 100%;
             object-fit: cover;
           }
+        }
+        .glare {
+          position: absolute;
+          inset: 0;
+          z-index: 20;
+
+          mix-blend-mode: soft-light;
+          background: radial-gradient(
+                          circle at var(--x) var(--y),
+                          rgba(255, 255, 255, 0.4) 30%,
+                          transparent 70%
+          );
         }
       }
     }

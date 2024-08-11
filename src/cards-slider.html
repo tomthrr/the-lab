@@ -26,16 +26,19 @@
           <div class="wrapper">
             <img src="/textures/3d_cube/1.jpg" alt="work"/>
           </div>
+          <div class="glare"></div>
         </div>
         <div class="card">
           <div class="wrapper">
             <img src="/textures/3d_cube/2.jpg" alt="work"/>
           </div>
+          <div class="glare"></div>
         </div>
         <div class="card">
           <div class="wrapper">
             <img src="/textures/3d_cube/3.jpg" alt="work"/>
           </div>
+          <div class="glare"></div>
         </div>
       </div>
     </div>
@@ -111,6 +114,43 @@
     }
     onResize();
     window.addEventListener("resize", onResize);
+
+    /**
+     * Cards animations
+     */
+
+    let boundingRect;
+    let mouse = {
+      x: 0,
+      y: 0
+    }
+
+    slides.forEach((slide) => {
+      slide.addEventListener('mouseenter', (e) => {
+        boundingRect = e.currentTarget.getBoundingClientRect();
+      });
+
+      slide.addEventListener('mouseleave', (e) => {
+        boundingRect = null;
+      });
+
+      slide.addEventListener('mousemove', (e) => {
+        if (!boundingRect) return;
+        mouse.x = e.clientX - boundingRect.left;
+        mouse.y = e.clientY - boundingRect.top;
+
+        const xPercentage = mouse.x / boundingRect.width;
+        const yPercentage = mouse.y / boundingRect.height;
+
+        const xRotation = (xPercentage - 0.5) * 20;
+        const yRotation = (0.5 - yPercentage) * 20;
+
+        e.currentTarget.style.setProperty('--x-rotation', `${yRotation}deg`);
+        e.currentTarget.style.setProperty('--y-rotation', `${xRotation}deg`);
+        e.currentTarget.querySelector('.glare').style.setProperty('--x', `${xPercentage * 100}%`);
+        e.currentTarget.querySelector('.glare').style.setProperty('--y', `${yPercentage * 100}%`);
+      });
+    })
   </script>
 </body>
 </html>
