@@ -20,11 +20,6 @@
       </div>
     </div>
 
-    <div class="debugger">
-      <div class="prev">&lsaquo;</div>
-      <div class="next">&rsaquo;</div>
-    </div>
-
     <div class="slider">
       <div class="cards-container">
         <div class="card">
@@ -70,107 +65,52 @@
 
     gsap.registerPlugin(Draggable, ScrollTrigger);
 
-    const cardsContainer = document.querySelector('.cards-container');
-    const cards = document.querySelectorAll('.card');
-    const gCards = gsap.utils.toArray('.card');
-    const snapPoints = gCards.map((item, index) => {
-      return -index * (cards[0].clientWidth + 250);
-    })
+    const slides = gsap.utils.toArray('.card');
+    const getSlideIndexAt = x => snapPoints.indexOf(gsap.utils.snap(snapPoints, x));
+    let snapPoints;
     let direction;
-    const cardsWidth = cards[0].clientWidth;
 
     const loader = document.querySelector('.loader');
-    const loaderParts = document.querySelectorAll('.loader div.part');
-
-    const prev = document.querySelector('.prev');
-    const next = document.querySelector('.next');
+    const loaderParts = gsap.utils.toArray('.loader div.part');
 
     let currentIndex = 0;
 
-    loaderParts.forEach((item, index) => {
-      if (index === 0) {
-        gsap.set(item, {
-          duration:0.5,
-          opacity: 0.8
-        })
-      } else {
-        gsap.set(item, {
-          opacity: 0.3
-        })
-      }
-    })
-
-    next.addEventListener('click', {
-      handleEvent: () => {
-        if (currentIndex < cards.length - 1) {
-
-          currentIndex++;
-
-        }
-        nextCard();
-      }
-    });
-
-    prev.addEventListener('click', {
-      handleEvent: () => {
-        if (currentIndex > 0) {
-          currentIndex--;
-        }
-        nextCard();
-      }
-    });
-
-    cards.forEach((item, index) => {
-      gsap.set(item, {
-        translateX: index * (cardsWidth + 250),
-      })
-    })
-
-
-
-    Draggable.create((cardsContainer), {
+    let draggable = Draggable.create(".cards-container", {
       type: "x",
-      bounds: {
-        minX: snapPoints[gCards.length - 1],
-        maxX: 0
+      onDragEnd() {
+        updateSlide(this.endX);
       },
-      onDrag: () => {
-        direction = gsap.getProperty(cardsContainer, 'x') > Draggable.get(cardsContainer).startX ? 1 : -1;
-      },
-      onDragEnd: () => {
-        if (direction === -1 && currentIndex < gCards.length - 1) {
-          currentIndex++;
-        } else if (direction === 1 && currentIndex > 0) {
-          currentIndex--;
-        }
-        highlightLoaderPart(currentIndex);
-      },
-    })
+      snap: {
+        x: (value) => {gsap.utils.snap(snapPoints, value)}
+      }
+    })[0];
 
-    function nextCard() {
-      cards.forEach((item, index) => {
-        gsap.to(item, {
-          translateX: (index - currentIndex) * (cardsWidth + 250),
-        })
-        highlightLoaderPart(currentIndex);
-      })
+    function updateSlide(x) {
+      const newSlide = getSlideIndexAt(x);
+      if (newSlide !== currentIndex) {
+        loaderParts[currentIndex].style.opacity = '0.3';
+        loaderParts[newSlide].style.opacity = '0.8';
+        currentIndex = newSlide;
+      }
     }
 
-    function highlightLoaderPart(index) {
-      loaderParts.forEach((item, i) => {
-        if (i === index) {
-          gsap.to(item, {
-            duration: 0.5,
-            opacity: 0.8
-          })
-        } else {
-          gsap.to(item, {
-            opacity: 0.3
-          })
-        }
+    function onResize() {
+      let centerX = window.innerWidth / 2;
+
+      // calculate snap points based on the center of the slider
+      snapPoints = slides.map(el => {
+        let bounds = el.getBoundingClientRect();
+        return centerX - (bounds.left + bounds.width / 2) + draggable.x;
+      });
+
+      // minimum and maximum bounds
+      draggable.applyBounds({
+        minX: snapPoints[snapPoints.length - 1],
+        maxX: snapPoints[0]
       })
     }
-
+    onResize();
+    window.addEventListener("resize", onResize);
   </script>
 </body>
 </html>
