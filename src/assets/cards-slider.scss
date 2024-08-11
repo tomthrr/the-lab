@@ -139,6 +139,7 @@
         padding: 0.75rem 1.5rem;
         cursor: pointer;
         white-space: nowrap;
+        transition: background-color 0.3s ease-out;
 
         p {
           font-weight: bold;
@@ -154,12 +155,20 @@
       }
 
       .left {
-
+        &:hover {
+          background-color: #0f0f0f;
+          color: white;
+        }
       }
 
       .right {
         background-color: #0f0f0f;
         color: white;
+
+        &:hover {
+          background-color: #518cff;
+          color: white;
+        }
       }
     }
 

@@ -68,6 +68,32 @@
 
     gsap.registerPlugin(Draggable, ScrollTrigger);
 
+    /**
+     * Enter animation
+     */
+
+    gsap.set(".cards-container", {
+      y: -500,
+    })
+
+    gsap.set(".accroche", {
+      y: 300,
+    })
+
+    gsap.to(".cards-container", {
+      y: 0,
+      duration: 1,
+    })
+
+    gsap.to(".accroche", {
+      y: 0,
+      delay: 1,
+    })
+
+    /**
+     * Draggable slider
+     */
+
     const slides = gsap.utils.toArray('.card');
     const getSlideIndexAt = x => snapPoints.indexOf(gsap.utils.snap(snapPoints, x));
     let snapPoints;
