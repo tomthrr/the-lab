@@ -45,6 +45,7 @@ export default {
           sectionsParallax: resolve(__dirname, 'src/sections-parallax.html'),
           galleryExpansion: resolve(__dirname, 'src/gallery-expansion.html'),
           cardsSlider: resolve(__dirname, 'src/cards-slider.html'),
+          objectFollow: resolve(__dirname, 'src/object-follow.html'),
         }
       },
     },

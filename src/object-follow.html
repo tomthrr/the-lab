@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+  <meta
+          name="viewport"
+          content="width=device-width, minimal-ui, viewport-fit=cover, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no"
+  />
+
+  <title>ThreeJS - 3D Cube</title>
+  <link href="assets/main.scss" rel="stylesheet" />
+</head>
+<body class="container-project">
+<div class="container"></div>
+<canvas class="webgl"></canvas>
+<script type="module">
+  import * as THREE from 'three'
+
+  const canvas = document.querySelector('canvas.webgl');
+
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0xffffff);
+
+  /*
+   *  Textures
+   */
+  const geometry = new THREE.TorusGeometry( 10, 3, 16, 100 );
+  const material = new THREE.MeshBasicMaterial( { color: 0x00ff00 } );
+  const torus = new THREE.Mesh( geometry, material );
+  scene.add( torus );
+
+  /**
+   * Lights
+   */
+
+  /**
+   * Sizes
+   */
+  const sizes = {
+    width: window.innerWidth,
+    height: window.innerHeight
+  }
+
+  window.addEventListener('resize', () => {
+    //updates sizes
+    sizes.width = window.innerWidth
+    sizes.height = window.innerHeight
+
+    camera.aspect = sizes.width / sizes.height
+    camera.updateProjectionMatrix()
+
+    // Update renderer
+    renderer.setSize(sizes.width, sizes.height)
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+  })
+
+  /**
+   * Camera
+   */
+    // Base camera
+  const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 100)
+  camera.position.x = 0
+  camera.position.y = 0
+  camera.position.z = 50
+  scene.add(camera)
+
+  /**
+   * Renderer
+   */
+  const renderer = new THREE.WebGLRenderer({
+    canvas: canvas
+  })
+  renderer.setSize(sizes.width, sizes.height)
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+
+  /**
+   * Animate
+   */
+
+  const cursor = {
+    x: 0,
+    y: 0
+  }
+
+  const target = new THREE.Vector3();
+
+  window.addEventListener('mousemove', (event) =>
+  {
+    cursor.x = expDecay((event.clientX - sizes.width / 2), target.x, 8, 0.01);
+    cursor.y = expDecay((event.clientY - sizes.height / 2), target.y, 8, 0.01);
+  })
+
+  const clock = new THREE.Clock()
+
+  const expDecay = (a, b, decay, dt) => {
+    return b + (a - b) * Math.exp(-decay * dt);
+  };
+
+  const tick = () =>
+  {
+    const elapsedTime = clock.getElapsedTime()
+
+    // this.light!.position.set(this.pointer.x * (1 / 0.5), this.pointer.y * (1 / 0.75), this.light!.position.z);
+    //
+    // this.pointer.x = expDecay(this.pointer.x, this.app.modules.input!.pointer.x, 8, dt);
+    // this.pointer.y = expDecay(this.pointer.y, this.app.modules.input!.pointer.y, 8, dt);
+    //
+    // this.logo!.rotation.y = this.pointer.x * 0.03 * Math.PI;
+    // this.logo!.rotation.x = this.pointer.y * -0.03 * Math.PI;
+
+
+    target.x = cursor.x * 0.03 * Math.PI;
+    target.y = cursor.y * -0.03 * Math.PI;
+
+    target.z = camera.position.z;
+
+    torus.lookAt( target );
+
+    // Render
+    renderer.render(scene, camera)
+
+    // Call tick again on the next frame
+    window.requestAnimationFrame(tick)
+  }
+
+  tick()
+</script>
+</body>
+</html>
