@@ -47,6 +47,7 @@ export default {
           cardsSlider: resolve(__dirname, 'src/cards-slider.html'),
           objectFollow: resolve(__dirname, 'src/object-follow.html'),
           raggingSea: resolve(__dirname, 'src/ragging-sea.html'),
+          piano: resolve(__dirname, 'src/piano.html'),
         }
       },
     },

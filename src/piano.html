@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+  <meta
+          name="viewport"
+          content="width=device-width, minimal-ui, viewport-fit=cover, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no"
+  />
+
+  <title>ThreeJS - Piano</title>
+  <link href="assets/main.scss" rel="stylesheet" />
+  <script src="../../../Downloads/30-animated-galaxy-final/src/script.js"></script>
+</head>
+<body class="container-project">
+<div class="container"></div>
+<canvas class="webgl"></canvas>
+<script type="module">
+  import * as THREE from 'three';
+  import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+  import GUI from 'lil-gui'
+
+  const canvas = document.querySelector('canvas.webgl');
+
+  // Debug
+  const gui = new GUI()
+
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color("#639aff");
+
+  // Template piano
+  const pianoKeys = []; // Contient toutes les touches du pianos
+  const whiteKeys = [
+    {name: "A0", color: "white", offset: 0, input: "a"},
+    {name: "A1", color: "white", offset: 0.9, input: "e"},
+    {name: "A2", color: "white", offset: 1.8, input: "t"},
+    {name: "A3", color: "white", offset: 2.7, input: "u"},
+  ]
+
+  const blackKeys = [
+    {name: "Ab1", color: "black", offset: 0.45, input: "z"},
+    {name: "Ab2", color: "black", offset: 1.35, input: "r"},
+    {name: "Ab3", color: "black", offset: 2.25, input: "y"},
+  ]
+
+  const keyboard = [...whiteKeys, ...blackKeys]
+
+
+  /*
+   *  Textures
+   */
+  // White keys
+  const whiteGeometry = new THREE.BoxGeometry( 0.8, 3, 0.2);
+
+  // Black keys
+  const blackGeometry = new THREE.BoxGeometry( 0.3, 1.5, 0.2);
+
+  const isKeyCorrect = (keydown) => {
+    for(let i = 0; i < keyboard.length; i++) {
+      if (keydown.key === keyboard[i].input) {
+
+        if (pianoKeys[i].material) {
+          pianoKeys[i].material.color.set("#ff0000");
+          playHitSound(keyboard[i].name);
+        }
+      }
+    }
+  }
+
+  const resetKey = (e) => {
+    for(let i = 0; i < keyboard.length; i++) {
+      if (e.key === keyboard[i].input) {
+        if (pianoKeys[i].material) {
+          if (keyboard[i].color === "white") {
+            pianoKeys[i].material.color.set("#ffffff");
+          } else {
+            pianoKeys[i].material.color.set("#000000");
+          }
+        }
+      }
+    }
+  }
+
+  /**
+   * Sounds
+   */
+  const A0 = new Audio('/audio/piano/A0.mp3')
+  const A1 = new Audio('/audio/piano/A1.mp3')
+  const A2 = new Audio('/audio/piano/A2.mp3')
+  const A3 = new Audio('/audio/piano/A3.mp3')
+  const Ab1 = new Audio('/audio/piano/Ab1.mp3')
+  const Ab2 = new Audio('/audio/piano/Ab2.mp3')
+  const Ab3 = new Audio('/audio/piano/Ab3.mp3')
+
+  const soundMap = new Map();
+  soundMap.set("A0", A0)
+  soundMap.set("A1", A1)
+  soundMap.set("A2", A2)
+  soundMap.set("A3", A3)
+  soundMap.set("Ab1", Ab1)
+  soundMap.set("Ab2", Ab2)
+  soundMap.set("Ab3", Ab3)
+
+  const playHitSound = (keyName) =>
+  {
+    console.log(keyName)
+    const mapp = soundMap.get(keyName);
+    console.log(mapp)
+    if (mapp) {
+      mapp.currentTime = 0
+      mapp.play()
+    }
+  }
+
+  // Add all keys to tab
+  for (let i = 0; i < keyboard.length; i++) {
+    if (keyboard[i].color === "white") {
+      const whiteMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
+      const touche = new THREE.Mesh(whiteGeometry, whiteMaterial);
+      touche.position.x += keyboard[i].offset;
+      pianoKeys.push(touche);
+      scene.add(touche);
+    } else {
+      const blackMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
+      const touche = new THREE.Mesh(blackGeometry, blackMaterial);
+      touche.position.x += keyboard[i].offset;
+      touche.position.y += 0.75;
+      touche.position.z += 0.2;
+      pianoKeys.push(touche);
+      scene.add(touche);
+    }
+  }
+
+  window.addEventListener("keydown", (e) => {
+    isKeyCorrect(e);
+  });
+
+  window.addEventListener("keyup", (e) => {
+    resetKey(e);
+  });
+
+
+  /**
+   * Lights
+   */
+
+  /**
+   * Sizes
+   */
+  const sizes = {
+    width: window.innerWidth,
+    height: window.innerHeight
+  }
+
+  window.addEventListener('resize', () => {
+    //updates sizes
+    sizes.width = window.innerWidth
+    sizes.height = window.innerHeight
+
+    camera.aspect = sizes.width / sizes.height
+    camera.updateProjectionMatrix()
+
+    // Update renderer
+    renderer.setSize(sizes.width, sizes.height)
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+  })
+
+  /**
+   * Camera
+   */
+    // Base camera
+  const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 100)
+  camera.position.x = 0
+  camera.position.y = 0
+  camera.position.z = 5
+  scene.add(camera)
+
+  // Controls
+  const controls = new OrbitControls(camera, canvas)
+  controls.enableDamping = true
+
+  /**
+   * Renderer
+   */
+  const renderer = new THREE.WebGLRenderer({
+    canvas: canvas
+  })
+  renderer.setSize(sizes.width, sizes.height)
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+
+  /**
+   * Animate
+   */
+  const clock = new THREE.Clock()
+
+  const tick = () =>
+  {
+    const elapsedTime = clock.getElapsedTime();
+
+    // Render
+    renderer.render(scene, camera);
+
+    // Controls
+    controls.update();
+
+    // Call tick again on the next frame
+    window.requestAnimationFrame(tick);
+  }
+
+  tick()
+</script>
+</body>
+</html>
