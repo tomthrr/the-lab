@@ -49,6 +49,7 @@ export default {
           raggingSea: resolve(__dirname, 'src/ragging-sea.html'),
           piano: resolve(__dirname, 'src/piano.html'),
           coffeeSmoke: resolve(__dirname, 'src/coffee-smoke.html'),
+          hologram: resolve(__dirname, 'src/hologram.html'),
         }
       },
     },
