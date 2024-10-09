@@ -74,7 +74,7 @@
     const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 100)
     camera.position.x = 0
     camera.position.y = 0
-    camera.position.z = 3.3
+    camera.position.z = 1
     scene.add(camera)
 
     /*
@@ -83,9 +83,9 @@
     const parametersObject = {};
     parametersObject.uDistance = 0.43;
     parametersObject.uPow = 2;
-    parametersObject.uNumbers = 10;
+    parametersObject.uNumbers = 30;
 
-    const geometry = new THREE.PlaneGeometry( 5, 5 );
+    const geometry = new THREE.PlaneGeometry( 1, 1 );
     const material = new THREE.ShaderMaterial ({
         fragmentShader: FragmentShader,
         vertexShader: VertexShader,
@@ -96,9 +96,6 @@
             uPow: { value: parametersObject.uPow},
             uNumbers: { value: parametersObject.uNumbers},
         },
-        side: THREE.DoubleSide,
-        depthWrite: false,
-        blending: THREE.AdditiveBlending
     })
 
     gui.add(parametersObject, "uDistance").min(0.01).max(1).step(0.01).name("Distance")
@@ -111,7 +108,7 @@
             material.uniforms.uPow.value = parametersObject.uPow;
         })
 
-    gui.add(parametersObject, "uNumbers").min(3).max(499).step(1).name("Nombre de points")
+    gui.add(parametersObject, "uNumbers").min(3).max(100).step(1).name("Nombre de points")
         .onChange(() => {
             material.uniforms.uNumbers.value = parametersObject.uNumbers;
         })
