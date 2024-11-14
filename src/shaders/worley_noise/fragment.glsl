@@ -1,9 +1,12 @@
+#include "../utils/random2D.glsl"
+
 uniform vec2 uResolution;
 uniform vec2 uMouse;
 uniform float uDistance;
 uniform float uPow;
 uniform float uNumbers; 
 uniform float uTime; 
+uniform float uGrain; 
 
 varying vec2 vUv;
 
@@ -24,8 +27,8 @@ void main() {
   for(int i = 0; i < MAX_POINTS; i++) {
     vec2 basePosition = vec2(random(vec2(float(i), 0.0)), random(vec2(0.0, float(i))));
 
-    float offsetX = 0.05 * sin(uTime + float(i) * 0.5); // Mouvement horizontal
-    float offsetY = 0.05 * cos(uTime + float(i) * 0.3); // Mouvement vertical
+    float offsetX = 0.05 * sin(uTime + float(i) * 0.5);
+    float offsetY = 0.05 * cos(uTime + float(i) * 0.3); 
 
     points[i] = basePosition + vec2(offsetX, offsetY);
   }
@@ -40,18 +43,19 @@ void main() {
     dist_min = min(distance, dist_min);
   }
 
-  if (dist_min < threshold) {
-    color = vec3(1.0, 0.0, 0.0);
-  } else {
-    color = vec3(dist_min);
+  float mappedDistance = map(dist_min, 0., uDistance, 0., 1.);
+  
+  float pow = mappedDistance + dist_min + pow(dist_min, uPow);
 
-    color += pow(dist_min, uPow);
-    color = color / 0.5;   
-  }
+  float r = map(pow, 0.9, 0.3, 0., 1.);
+  float g = map(pow, 0., 0.2, 1., 0.3);
+  float b = map(pow, 0., 0.8, .5, 0.);
 
-  float r = map(dist_min, 0., 0.3, 0., 1.);
-  float g = map(dist_min, 0., 0.2, 1., 0.);
-  float b = map(dist_min, 0., 0.8, 1., 0.);
+  vec3 newColor = vec3(r, g, b);
 
-  gl_FragColor = vec4(r, g, b, 1.0);
+  // Optionnel : appliquer un léger effet de bruit
+  float noise = random2D(vUv.xy);
+  newColor += vec3(noise) * uGrain; 
+
+  gl_FragColor = vec4(newColor, 1.0);
 }
