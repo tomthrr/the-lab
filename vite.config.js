@@ -51,6 +51,7 @@ export default {
           coffeeSmoke: resolve(__dirname, 'src/coffee-smoke.html'),
           hologram: resolve(__dirname, 'src/hologram.html'),
           worleyNoise: resolve(__dirname, 'src/worley-noise.html'),
+          officeStudio: resolve(__dirname, 'src/office-studio.html'),
         }
       },
     },
