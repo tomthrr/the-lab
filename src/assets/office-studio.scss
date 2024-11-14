@@ -18,16 +18,28 @@ h1, h2, h3, p {
   margin: 0;
 }
 
-canvas.webgl {
+.overlay {
+  position: fixed;
+  box-sizing: border-box;
   top: 0;
   left: 0;
-  position: fixed;
+  width: 100vw;
+  height: 100vh;
   pointer-events: none;
+
+  canvas.webgl {
+    width: 100%;
+    height: 100%;
+    position: relative;
+  }
 }
 
+
+
 div.office-studio {
-  z-index: 12;
+  position: relative;
   font-family: "Afacad Flux", sans-serif;
+  color: white;
 
   .header {
     display: flex;
@@ -35,10 +47,6 @@ div.office-studio {
     flex-direction: row;
     align-items: center;
     padding: 2rem 1rem;
-
-    header {
-
-    }
 
     nav {
       display: flex;
@@ -48,7 +56,6 @@ div.office-studio {
   }
 
   .hero-banner {
-    pointer-events: none;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -57,6 +64,7 @@ div.office-studio {
 
     p {
       font-size: 20vw;
+      pointer-events: none;
     }
 
     > div {
@@ -79,6 +87,7 @@ div.office-studio {
 
     .second {
       h1 {
+        pointer-events: none;
         display: flex;
         flex-direction: row;
         flex-wrap: wrap;

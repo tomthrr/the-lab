@@ -105,8 +105,8 @@
     <div class="description">
         <p>Original idea from the <a class="link" href="https://offficestud.io/" target="_blank">Office Studio</a></p>
     </div>
+<div class="overlay"><canvas class="webgl"></canvas></div>
 </div>
-<canvas class="webgl"></canvas>
 <script type="module">
     import * as THREE from 'three';
     import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
@@ -133,7 +133,6 @@
     gltfLoader.load('/textures/office_studio/quartz_chair.glb', (gltf) => {
         quartzRef = gltf.scene;
         quartzRef.scale.set(4, 4, 4);
-        quartzRef.position.set(0, -4, -4);
 
         setModel(quartzRef);
     });
@@ -146,7 +145,6 @@
                 scene.remove(currentModel);
             }
             currentModel = model;
-            currentModel.position.set(0, -4, -4);
             currentModel.scale.set(4, 4, 4);
             scene.add(currentModel);
         } else {
@@ -179,8 +177,6 @@
     camera.position.set(0, 0, 20); // Position de la caméra
     scene.add(camera);
 
-    const controls = new OrbitControls(camera, canvas);
-    controls.enableDamping = true;
 
     const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
     renderer.setSize(sizes.width, sizes.height);
@@ -195,6 +191,35 @@
     });
 
     /**
+     * Controls
+     */
+    const controls = new OrbitControls(camera, canvas);
+    controls.enableDamping = true;
+    controls.enableZoom = false;
+
+    // const axesHelper = new THREE.AxesHelper( 5 );
+    // scene.add(axesHelper)
+
+    const raycaster = new THREE.Raycaster();
+    const mousea = new THREE.Vector2();
+
+    document.addEventListener('click', (event) => {
+        console.log('lcik');
+        mousea.x = (event.clientX / window.innerWidth) * 2 - 1;
+        mousea.y = - (event.clientY / window.innerHeight) * 2 + 1;
+
+        raycaster.setFromCamera(mousea, camera);
+        const intersects = raycaster.intersectObjects(scene.children);
+
+        // Si on est bien sur le model alors on pointe
+        if (intersects.length === 0) {
+            renderer.domElement.style.pointerEvents = 'auto';
+        } else {
+            renderer.domElement.style.pointerEvents = 'none';
+        }
+    });
+
+    /**
      * Animation
      */
     const clock = new THREE.Clock();
@@ -202,7 +227,9 @@
         const elapsedTime = clock.getElapsedTime();
 
         if (currentModel) {
-            currentModel.rotation.y += 0.01;
+            currentModel.rotation.y += 0.001;
+            currentModel.rotation.z += 0.001;
+            currentModel.rotation.z += 0.001;
         }
 
         controls.update();
