@@ -52,6 +52,7 @@ export default {
           hologram: resolve(__dirname, 'src/hologram.html'),
           worleyNoise: resolve(__dirname, 'src/worley-noise.html'),
           officeStudio: resolve(__dirname, 'src/office-studio.html'),
+          driftingClub: resolve(__dirname, 'src/drifting-club.html'),
         }
       },
     },
