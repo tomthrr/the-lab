@@ -1,0 +1,8 @@
+Model Information:
+* title:	Low Poly Fishing Boat
+* source:	https://sketchfab.com/3d-models/low-poly-fishing-boat-0f7848ef95fd4fadbb5c43ebfe9ede45
+* author:	PerfectioNH (https://sketchfab.com/PerfectioNH3)
+
+Model License:
+* license type:	SKETCHFAB Standard (https://sketchfab.com/licenses)
+* requirements:	Under basic restrictions, use worldwide, on all types of media, commercially or not, and in all types of derivative works

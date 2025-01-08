@@ -21,6 +21,8 @@
   import GUI from 'lil-gui'
   import waterVertexShader from './shaders/ragging-sea-v2/vertex.glsl'
   import waterFragmentShader from './shaders/ragging-sea-v2/fragment.glsl'
+  import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
+  import {AmbientLight} from "three";
 
   /**
    * Base
@@ -31,6 +33,9 @@
 
   // Canvas
   const canvas = document.querySelector('canvas.webgl')
+
+  // Loaders
+  const gltfLoader = new GLTFLoader()
 
   // Scene
   const scene = new THREE.Scene()
@@ -92,6 +97,26 @@
   water.rotation.x = - Math.PI * 0.5
   scene.add(water)
 
+  // Boat
+  let boatMesh = null
+  gltfLoader.load(
+    '/textures/ragging-sea-v2/scene.gltf',
+    (gltf) => {
+      console.log(gltf);
+      boatMesh = gltf.scene;
+      boatMesh.scale.set(0.1, 0.1, 0.1)
+      scene.add(boatMesh);
+    },
+    undefined,  // Optionally handle progress here
+    (error) => {
+      console.error('An error occurred loading the model:', error);
+    }
+  );
+
+  // lights
+  const ambientLight = new THREE.AmbientLight()
+  scene.add(ambientLight)
+
   /**
    * Sizes
    */
@@ -148,6 +173,18 @@
 
     // Water
     waterMaterial.uniforms.uTime.value = elapsedTime
+
+    // elevation
+    if (boatMesh) {
+      const elevation =
+        Math.sin(boatMesh.position.x * waterMaterial.uniforms.uBigWavesFrequency.value.x +
+          elapsedTime * waterMaterial.uniforms.uBigWavesSpeed.value) *
+        Math.sin(boatMesh.position.z * waterMaterial.uniforms.uBigWavesFrequency.value.y +
+          elapsedTime * waterMaterial.uniforms.uBigWavesSpeed.value) *
+        waterMaterial.uniforms.uBigWavesElevation.value;
+
+      boatMesh.position.y = elevation - 0.14;
+    }
 
     // Update controls
     controls.update()
