@@ -55,6 +55,7 @@ export default {
           driftingClub: resolve(__dirname, 'src/drifting-club.html'),
           lightsShading: resolve(__dirname, 'src/lights-shading.html'),
           raggingSeaV2: resolve(__dirname, 'src/ragging-sea-v2.html'),
+          halftoneShading: resolve(__dirname, 'src/halftone-shading.html'),
         }
       },
     },
