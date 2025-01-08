@@ -54,6 +54,7 @@ export default {
           officeStudio: resolve(__dirname, 'src/office-studio.html'),
           driftingClub: resolve(__dirname, 'src/drifting-club.html'),
           lightsShading: resolve(__dirname, 'src/lights-shading.html'),
+          raggingSeaV2: resolve(__dirname, 'src/ragging-sea-v2.html'),
         }
       },
     },
