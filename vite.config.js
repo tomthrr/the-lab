@@ -56,6 +56,7 @@ export default {
           lightsShading: resolve(__dirname, 'src/lights-shading.html'),
           raggingSeaV2: resolve(__dirname, 'src/ragging-sea-v2.html'),
           halftoneShading: resolve(__dirname, 'src/halftone-shading.html'),
+          realisticEarth: resolve(__dirname, 'src/realistic-earth.html'),
         }
       },
     },
