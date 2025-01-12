@@ -57,6 +57,7 @@ export default {
           raggingSeaV2: resolve(__dirname, 'src/ragging-sea-v2.html'),
           halftoneShading: resolve(__dirname, 'src/halftone-shading.html'),
           realisticEarth: resolve(__dirname, 'src/realistic-earth.html'),
+          portalScene: resolve(__dirname, 'src/portal-scene.html'),
         }
       },
     },
