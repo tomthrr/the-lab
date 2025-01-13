@@ -20,11 +20,17 @@
   import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
   import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
   import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js'
+  import firefliesVertexShader from '/shaders/portal-scene/fireflies/vertex.glsl';
+  import firefliesFragmentShader from '/shaders/portal-scene/fireflies/fragment.glsl';
+  import portalFragmentShader from '/shaders/portal-scene/portal/fragment.glsl';
+  import portalVertexShader from '/shaders/portal-scene/portal/vertex.glsl';
 
   /**
    * Base
    */
 // Debug
+    const debugObject = {};
+
   const gui = new GUI({
     width: 400
   })
@@ -62,7 +68,32 @@
     const bakedMaterial = new THREE.MeshBasicMaterial({ map: bakedTexture });
 
     const poleLightMaterial = new THREE.MeshBasicMaterial({color: 0xffffe5});
-    const portalLightMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
+    const portalLightMaterial = new THREE.ShaderMaterial({
+      uniforms: {
+        uTime: {value: 0},
+        uColorStart: { value: new THREE.Color(0xbb00ff) },
+        uColorEnd: { value: new THREE.Color(0x953aa1) }
+      },
+      vertexShader: portalVertexShader,
+      fragmentShader: portalFragmentShader
+    })
+
+  debugObject.portalColorStart = '#bb00ff'
+  debugObject.portalColorEnd = '#953aa1'
+
+  gui
+    .addColor(debugObject, 'portalColorStart')
+    .onChange(() =>
+    {
+      portalLightMaterial.uniforms.uColorStart.value.set(debugObject.portalColorStart)
+    })
+
+  gui
+    .addColor(debugObject, 'portalColorEnd')
+    .onChange(() =>
+    {
+      portalLightMaterial.uniforms.uColorEnd.value.set(debugObject.portalColorEnd)
+    })
 
   /**
     * Object
@@ -85,6 +116,51 @@
         }
 )
 
+
+  /**
+   * Fireflies
+   */
+  // Geometry
+  const firefliesGeometry = new THREE.BufferGeometry();
+  const firefliesCount = 30;
+  const positionsArray = new Float32Array(firefliesCount * 3);
+  const scaleArray = new Float32Array(firefliesCount);
+
+  for(let i =0; i < firefliesCount; i++) {
+    positionsArray[i * 3 + 0] = (Math.random() - 0.5) * 4;
+    positionsArray[i * 3 + 1] = Math.random() * 1.5;
+    positionsArray[i * 3 + 2] = (Math.random() - 0.5) * 4;
+
+    scaleArray[i] = Math.random();
+  }
+
+  firefliesGeometry.setAttribute('position', new THREE.BufferAttribute(positionsArray, 3));
+  firefliesGeometry.setAttribute('aScale', new THREE.BufferAttribute(scaleArray, 1));
+
+  // Material
+  const firefliesMaterial = new THREE.ShaderMaterial({
+    uniforms: {
+      uTime: {value: 0},
+      uPixelRatio: {value: Math.min(window.devicePixelRatio, 2)},
+      uSize: {value: 100},
+    },
+    blending: THREE.AdditiveBlending,
+    transparent: true,
+    vertexShader: firefliesVertexShader,
+    fragmentShader: firefliesFragmentShader,
+    depthWrite: false,
+  });
+
+  gui.add(firefliesMaterial.uniforms.uSize, 'value')
+    .min(10)
+    .max(500)
+    .step(1)
+    .name('firefliesSize');
+
+  // Points
+  const fireflies = new THREE.Points(firefliesGeometry, firefliesMaterial);
+  scene.add(fireflies)
+
   /**
    * Sizes
    */
@@ -105,7 +181,9 @@
 
     // Update renderer
     renderer.setSize(sizes.width, sizes.height)
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+    firefliesMaterial.uniforms.uPixelRatio.value = Math.min(window.devicePixelRatio, 2);
   })
 
   /**
@@ -132,6 +210,13 @@
   renderer.setSize(sizes.width, sizes.height)
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
 
+  debugObject.clearColor = '#201919';
+  renderer.setClearColor(debugObject.clearColor);
+  gui.addColor(debugObject, 'clearColor')
+    .onChange(() => {
+      renderer.setClearColor(debugObject.clearColor)
+    });
+
   /**
    * Animate
    */
@@ -143,6 +228,10 @@
 
     // Update controls
     controls.update()
+
+    // Uniforms
+    firefliesMaterial.uniforms.uTime.value = elapsedTime;
+    portalLightMaterial.uniforms.uTime.value = elapsedTime;
 
     // Render
     renderer.render(scene, camera)
