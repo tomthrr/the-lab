@@ -58,6 +58,7 @@ export default {
           halftoneShading: resolve(__dirname, 'src/halftone-shading.html'),
           realisticEarth: resolve(__dirname, 'src/realistic-earth.html'),
           portalScene: resolve(__dirname, 'src/portal-scene.html'),
+          dynamiteRythm: resolve(__dirname, 'src/dynamite-rythm.html'),
         }
       },
     },
