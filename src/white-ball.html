@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+    <meta
+            name="viewport"
+            content="width=device-width, minimal-ui, viewport-fit=cover, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no"
+    />
+
+    <title>ThreeJS - White Ball</title>
+    <link href="assets/main.scss" rel="stylesheet" />
+</head>
+<body class="container-project">
+<div class="container"></div>
+<canvas class="webgl"></canvas>
+<script type="module">
+  import * as THREE from 'three'
+  import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
+  import GUI from 'lil-gui'
+  import ballVertex from "/shaders/white-ball/vertex.glsl"
+  import ballFragment from "/shaders/white-ball/fragment.glsl"
+
+  /**
+   * Base
+   */
+// Debug
+  const gui = new GUI()
+
+  // Canvas
+  const canvas = document.querySelector('canvas.webgl')
+
+  // Scene
+  const scene = new THREE.Scene()
+
+  scene.background = new THREE.Color("#ffffff")
+
+  /**
+   * Variables
+   */
+  const mouse = new THREE.Vector2();
+  const targetX = { value: 0 };
+
+  const sizes = {
+    width: window.innerWidth,
+    height: window.innerHeight
+  }
+
+  /**
+   * Textures
+   */
+  const textureLoader = new THREE.TextureLoader()
+
+  /**
+   * Test mesh
+   */
+// Geometry
+  const geometry = new THREE.SphereGeometry(0.5, 256, 256); // Sphère avec plus de subdivisions
+
+  // Material
+  const material = new THREE.ShaderMaterial({
+    vertexShader: ballVertex,
+    fragmentShader: ballFragment,
+    side: THREE.DoubleSide,
+    uniforms: {
+      mousePos: { value: new THREE.Vector2() },
+      resolution: { value: new THREE.Vector2(sizes.width, sizes.height) },
+      hitPos: { value: new THREE.Vector3() },
+      uTime: { value: 0 },
+    }
+  });
+
+  // Mesh
+  const mesh = new THREE.Mesh(geometry, material)
+  scene.add(mesh)
+
+  /**
+   * Sizes
+   */
+  window.addEventListener('resize', () =>
+  {
+    // Update sizes
+    sizes.width = window.innerWidth
+    sizes.height = window.innerHeight
+
+    // Mise à jour correcte des uniforms
+    material.uniforms.resolution.value.set(sizes.width, sizes.height);
+
+    // Update camera
+    camera.aspect = sizes.width / sizes.height
+    camera.updateProjectionMatrix()
+
+    // Update renderer
+    renderer.setSize(sizes.width, sizes.height)
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+  })
+
+  /**
+   * Camera
+   */
+// Base camera
+  const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 100)
+  camera.position.set(0.25, - 0.25, 1)
+  scene.add(camera)
+
+  // Controls
+  const controls = new OrbitControls(camera, canvas)
+  controls.enableDamping = true
+
+  /**
+   * Renderer
+   */
+  const renderer = new THREE.WebGLRenderer({
+    canvas: canvas
+  })
+  renderer.setSize(sizes.width, sizes.height)
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+
+  /**
+   * Animate
+   */
+  const clock = new THREE.Clock()
+
+  /**
+   * Mouse Interaction
+   */
+  const raycaster = new THREE.Raycaster();
+  const hitPosition = new THREE.Vector3(); // Correction: hitPos doit être un vec3
+  const smoothedHitPosition = new THREE.Vector3(); // Position interpolée
+
+  window.addEventListener("mousemove", (event) => {
+    // Normalisation des coordonnées de la souris
+    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+    mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+    // Mise à jour de mousePos dans le shader
+    material.uniforms.mousePos.value.set(mouse.x, mouse.y);
+
+    // Raycasting pour détecter l'intersection avec l'objet
+    raycaster.setFromCamera(mouse, camera);
+    const intersects = raycaster.intersectObject(mesh);
+
+    if (intersects.length > 0) {
+      hitPosition.copy(intersects[0].point); // Copier la position d'impact
+    }
+  });
+
+  /**
+   * Animation Loop
+   */
+  const tick = () =>
+  {
+    const elapsedTime = clock.getElapsedTime()
+
+    smoothedHitPosition.lerp(hitPosition, 0.1);
+    material.uniforms.hitPos.value.copy(smoothedHitPosition);
+    material.uniforms.uTime.value = elapsedTime;
+
+    // Ajout du easing sur la caméra
+    camera.position.x = (mouse.x - camera.position.x) * 0.12;
+
+    // Update controls
+    controls.update()
+
+    // Render
+    renderer.render(scene, camera)
+
+    // Call tick again on the next frame
+    window.requestAnimationFrame(tick)
+  }
+
+  tick()
+
+</script>
+</body>
+</html>

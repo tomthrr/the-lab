@@ -59,6 +59,7 @@ export default {
           realisticEarth: resolve(__dirname, 'src/realistic-earth.html'),
           portalScene: resolve(__dirname, 'src/portal-scene.html'),
           dynamiteRythm: resolve(__dirname, 'src/dynamite-rythm.html'),
+          whiteBall: resolve(__dirname, 'src/white-ball.html'),
         }
       },
     },
