@@ -60,6 +60,7 @@ export default {
           portalScene: resolve(__dirname, 'src/portal-scene.html'),
           dynamiteRythm: resolve(__dirname, 'src/dynamite-rythm.html'),
           whiteBall: resolve(__dirname, 'src/white-ball.html'),
+          SunFlowerXr: resolve(__dirname, 'src/sun-flower-xr.html'),
         }
       },
     },
