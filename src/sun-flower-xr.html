@@ -8,76 +8,107 @@
             content="width=device-width, minimal-ui, viewport-fit=cover, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no"
     />
 
-    <title>ThreeJS - 3D Cube</title>
+    <title>ThreeJS - AR Cube</title>
     <link href="assets/main.scss" rel="stylesheet" />
 </head>
 <body class="container-project">
-    <div class="container">
+<div class="container">
+    <button id="ar-button">Start AR</button>
 </div>
-
+<canvas class="webgl"></canvas>
 <script type="module">
   import * as THREE from 'three';
-  // Import the default VRButton
-  import { VRButton } from 'https://unpkg.com/three/examples/jsm/webxr/VRButton.js';
+  import { ARButton } from 'three/examples/jsm/webxr/ARButton.js';
 
-  // Make a new scene
-  let scene = new THREE.Scene();
-  // Set background color of the scene to gray
-  scene.background = new THREE.Color(0x505050);
+  const canvas = document.querySelector('canvas.webgl');
 
-  // Make a camera. note that far is set to 100, which is better for realworld sized environments
-  let camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 100);
-  camera.position.set(0, 1.6, 3);
-  scene.add(camera);
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x0f0f0f);
 
-  // Add some lights
-  var light = new THREE.DirectionalLight(0xffffff,0.5);
-  light.position.set(1, 1, 1).normalize();
-  scene.add(light);
-  scene.add(new THREE.AmbientLight(0xffffff,0.5))
+  /*
+   *  Textures
+   */
+  const materials = [
+    new THREE.MeshBasicMaterial({color: 0xff0000}),
+    new THREE.MeshBasicMaterial({color: 0x0000ff}),
+    new THREE.MeshBasicMaterial({color: 0x00ff00}),
+    new THREE.MeshBasicMaterial({color: 0xff00ff}),
+    new THREE.MeshBasicMaterial({color: 0x00ffff}),
+    new THREE.MeshBasicMaterial({color: 0xffff00})
+  ];
 
-  // Make a red cube
-  let cube = new THREE.Mesh(
-    new THREE.BoxGeometry(1,1,1),
-    new THREE.MeshLambertMaterial({color:'red'})
-  );
-  cube.position.set(0, 1.5, -10);
+  // Create the cube and add it to the demo scene.
+  const cube = new THREE.Mesh(new THREE.BoxGeometry(), materials);
+  cube.position.set(0, 0, -0.5);
   scene.add(cube);
 
-  // Make a renderer that fills the screen
-  let renderer = new THREE.WebGLRenderer({antialias: true});
-  renderer.setPixelRatio(window.devicePixelRatio);
-  renderer.setSize(window.innerWidth, window.innerHeight);
-  // Turn on VR support
+  /**
+   * Sizes
+   */
+  const sizes = {
+    width: window.innerWidth,
+    height: window.innerHeight
+  }
+
+  window.addEventListener('resize', () => {
+    //updates sizes
+    sizes.width = window.innerWidth
+    sizes.height = window.innerHeight
+
+    camera.aspect = sizes.width / sizes.height
+    camera.updateProjectionMatrix()
+
+    // Update renderer
+    renderer.setSize(sizes.width, sizes.height)
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+  })
+
+  /**
+   * Camera
+   */
+    // Base camera
+  const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 100)
+  camera.position.x = 0
+  camera.position.y = 0
+  camera.position.z = 2
+  scene.add(camera)
+
+  /**
+   * Renderer
+   */
+  const renderer = new THREE.WebGLRenderer({
+    canvas: canvas,
+    alpha: true,
+    preserveDrawingBuffer: true,
+  })
+  renderer.autoClear = false;
+
+  renderer.setSize(sizes.width, sizes.height)
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+
+  // Enable WebXR
   renderer.xr.enabled = true;
-  // Set animation loop
-  renderer.setAnimationLoop(render);
-  // Add canvas to the page
-  document.body.appendChild(renderer.domElement);
 
-  // Add a button to enter/exit vr to the page
-  document.body.appendChild(VRButton.createButton(renderer));
+  // Add AR button
+  document.body.appendChild(ARButton.createButton(renderer, { requiredFeatures: ['hit-test'] }));
 
-  // For AR instead, import ARButton at the top
-  //    import { ARButton } from 'https://unpkg.com/three/examples/jsm/webxr/ARButton.js';
-  // then create the button
-  //  document.body.appendChild(ARButton.createButton(renderer));
+  /**
+   * Animate
+   */
+  const clock = new THREE.Clock()
 
-  // Handle browser resize
-  window.addEventListener('resize', onWindowResize, false);
+  const tick = () =>
+  {
+    const elapsedTime = clock.getElapsedTime()
 
-  function onWindowResize() {
-    camera.aspect = window.innerWidth / window.innerHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth, window.innerHeight);
+    // Render
+    renderer.render(scene, camera)
+
+    // Call tick again on the next frame
+    window.requestAnimationFrame(tick)
   }
 
-  function render(time) {
-    // Rotate the cube
-    cube.rotation.y = time / 1000;
-    // Draw everything
-    renderer.render(scene, camera);
-  }
+  renderer.setAnimationLoop(tick);
 </script>
 </body>
 </html>
