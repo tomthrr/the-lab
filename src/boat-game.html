@@ -24,7 +24,7 @@
   import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
   import {fogFrag, fogParsFrag, fogParsVert, fogVert} from "./shaders/boat-game/FogReplace.js";
 
-  var params = {
+  const params = {
     fogNearColor: 0xfc4848,
     fogHorizonColor: 0xe4dcff,
     fogDensity: 0.0025,
@@ -50,9 +50,8 @@
   const scene = new THREE.Scene()
   scene.background = new THREE.Color('#e4dcff'); // Couleur plus claire pour simuler du brouillard dans l'air
   // Fog
-  const fog = new THREE.Fog('#262837', 0.05, 9)
+  const fog = new THREE.Fog(params.fogHorizonColor, 0.05, 9)
   scene.fog = fog
-  scene.fog.color.set(params.fogHorizonColor);
 
   /**
    * Water
@@ -91,10 +90,16 @@
         uColorOffset: { value: 0.925 },
         uColorMultiplier: { value: 1 },
 
-        fogColor: { value: new THREE.Color('#262837') },
-        fogNear: { value: 1.0 },
-        fogFar: { value: 15.0 }
+        fogColor: { value: new THREE.Color(params.fogHorizonColor) },
+        fogNear: { value: 0.05 },
+        fogFar: { value: 9.0 },
+
+        fogHorizonColor: { value: new THREE.Color(params.fogHorizonColor) },
+        fogNoiseFreq: { value: params.fogNoiseFreq },
+        fogNoiseSpeed: { value: params.fogNoiseSpeed },
+        fogNoiseImpact: { value: params.fogNoiseImpact },
       },
+    fog: true
   })
 
   gui.add(waterMaterial.uniforms.uBigWavesElevation, 'value').min(0).max(1).step(0.001).name('uBigWavesElevation')
@@ -113,40 +118,39 @@
   // Mesh
   const mesh = new THREE.Mesh(
     waterGeometry,
-    new THREE.MeshBasicMaterial({ color: new THREE.Color(0xefd1b5) })
+    waterMaterial
   );
 
   mesh.rotation.x += -Math.PI * 0.5;
   let terrainShader;
-  mesh.material.onBeforeCompile = shader => {
-    shader.vertexShader = shader.vertexShader.replace(
-      `#include <fog_pars_vertex>`,
-      fogParsVert
-    );
-    shader.vertexShader = shader.vertexShader.replace(
-      `#include <fog_vertex>`,
-      fogVert
-    );
-    shader.fragmentShader = shader.fragmentShader.replace(
-      `#include <fog_pars_fragment>`,
-      fogParsFrag
-    );
-    shader.fragmentShader = shader.fragmentShader.replace(
-      `#include <fog_fragment>`,
-      fogFrag
-    );
-
-    const uniforms = ({
-      fogNearColor: { value: new THREE.Color(params.fogNearColor) },
-      fogNoiseFreq: { value: params.fogNoiseFreq },
-      fogNoiseSpeed: { value: params.fogNoiseSpeed },
-      fogNoiseImpact: { value: params.fogNoiseImpact },
-      time: { value: 0 }
-    });
-
-    shader.uniforms = THREE.UniformsUtils.merge([shader.uniforms, uniforms]);
-    terrainShader = shader
-  };
+  // mesh.material.onBeforeCompile = shader => {
+  //   shader.vertexShader = shader.vertexShader.add(
+  //     `#include <fog_pars_vertex>`,
+  //     fogParsVert
+  //   );
+  //   shader.vertexShader = shader.vertexShader.replace(
+  //     `#include <fog_vertex>`,
+  //     fogVert
+  //   );
+  //   shader.fragmentShader = shader.fragmentShader.replace(
+  //     `#include <fog_pars_fragment>`,
+  //     fogParsFrag
+  //   );
+  //   shader.fragmentShader = shader.fragmentShader.replace(
+  //     `#include <fog_fragment>`,
+  //     fogFrag
+  //   );
+  //
+  //   const uniforms = ({
+  //     fogNearColor: { value: new THREE.Color(params.fogNearColor) },
+  //     fogNoiseFreq: { value: params.fogNoiseFreq },
+  //     fogNoiseSpeed: { value: params.fogNoiseSpeed },
+  //     fogNoiseImpact: { value: params.fogNoiseImpact },
+  //   });
+  //
+  //   shader.uniforms = THREE.UniformsUtils.merge([shader.uniforms, uniforms]);
+  //     terrainShader = shader
+  // };
   scene.add(mesh);
 
   gui.add(params, "fogDensity", 0, 0.01).onChange(function() {
@@ -250,18 +254,18 @@
     const elapsedTime = clock.getElapsedTime()
 
     // Water
-    // waterMaterial.uniforms.uTime.value = elapsedTime
+    waterMaterial.uniforms.uTime.value = elapsedTime
 
     // elevation
     if (boatMesh) {
-      // const elevation =
-      //   Math.sin(boatMesh.position.x * waterMaterial.uniforms.uBigWavesFrequency.value.x +
-      //     elapsedTime * waterMaterial.uniforms.uBigWavesSpeed.value) *
-      //   Math.sin(boatMesh.position.z * waterMaterial.uniforms.uBigWavesFrequency.value.y +
-      //     elapsedTime * waterMaterial.uniforms.uBigWavesSpeed.value) *
-      //   waterMaterial.uniforms.uBigWavesElevation.value;
+      const elevation =
+        Math.sin(boatMesh.position.x * waterMaterial.uniforms.uBigWavesFrequency.value.x +
+          elapsedTime * waterMaterial.uniforms.uBigWavesSpeed.value) *
+        Math.sin(boatMesh.position.z * waterMaterial.uniforms.uBigWavesFrequency.value.y +
+          elapsedTime * waterMaterial.uniforms.uBigWavesSpeed.value) *
+        waterMaterial.uniforms.uBigWavesElevation.value;
 
-      // boatMesh.position.y = elevation - 0.05;
+      boatMesh.position.y = elevation - 0.05;
     }
 
     // Update controls
