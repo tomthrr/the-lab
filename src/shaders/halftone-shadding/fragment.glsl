@@ -21,10 +21,10 @@ void main()
     // Lights
     vec3 light = vec3(0.0);
 
-    light += ambientLight(
-            vec3(1.0),  // LightColor
-            1.0         // Intensity
-    );
+        light += ambientLight(
+                vec3(1.0),  // LightColor
+                1.0         // Intensity
+        );
 
     light += directionalLigth(
         vec3(1.0, 1.0, 1.0),    // Light color
