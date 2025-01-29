@@ -22,7 +22,16 @@
   import waterVertexShader from './shaders/boat-game/vertex.glsl'
   import waterFragmentShader from './shaders/boat-game/fragment.glsl'
   import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
-  import {AmbientLight} from "three";
+  import {fogFrag, fogParsFrag, fogParsVert, fogVert} from "./shaders/boat-game/FogReplace.js";
+
+  var params = {
+    fogNearColor: 0xfc4848,
+    fogHorizonColor: 0xe4dcff,
+    fogDensity: 0.0025,
+    fogNoiseSpeed: 100,
+    fogNoiseFreq: .0012,
+    fogNoiseImpact: .5
+  };
 
   /**
    * Base
@@ -39,16 +48,17 @@
 
   // Scene
   const scene = new THREE.Scene()
-
-  //Fog
-  const fog = new THREE.Fog('#262837', 1, 15)
+  scene.background = new THREE.Color('#e4dcff'); // Couleur plus claire pour simuler du brouillard dans l'air
+  // Fog
+  const fog = new THREE.Fog('#262837', 0.05, 9)
   scene.fog = fog
+  scene.fog.color.set(params.fogHorizonColor);
 
   /**
    * Water
    */
-// Geometry
-  const waterGeometry = new THREE.PlaneGeometry(4, 4, 512, 512)
+    // Geometry
+  const waterGeometry = new THREE.PlaneGeometry(20, 20, 512, 512)
   waterGeometry.deleteAttribute('normal')   // delete for position, we compute it by ourself
   waterGeometry.deleteAttribute('uv')       // delete also not using it
 
@@ -101,9 +111,65 @@
   gui.add(waterMaterial.uniforms.uColorMultiplier, 'value').min(0).max(10).step(0.001).name('uColorMultiplier')
 
   // Mesh
-  const water = new THREE.Mesh(waterGeometry, waterMaterial)
-  water.rotation.x = - Math.PI * 0.5
-  scene.add(water)
+  const mesh = new THREE.Mesh(
+    waterGeometry,
+    new THREE.MeshBasicMaterial({ color: new THREE.Color(0xefd1b5) })
+  );
+
+  mesh.rotation.x += -Math.PI * 0.5;
+  let terrainShader;
+  mesh.material.onBeforeCompile = shader => {
+    shader.vertexShader = shader.vertexShader.replace(
+      `#include <fog_pars_vertex>`,
+      fogParsVert
+    );
+    shader.vertexShader = shader.vertexShader.replace(
+      `#include <fog_vertex>`,
+      fogVert
+    );
+    shader.fragmentShader = shader.fragmentShader.replace(
+      `#include <fog_pars_fragment>`,
+      fogParsFrag
+    );
+    shader.fragmentShader = shader.fragmentShader.replace(
+      `#include <fog_fragment>`,
+      fogFrag
+    );
+
+    const uniforms = ({
+      fogNearColor: { value: new THREE.Color(params.fogNearColor) },
+      fogNoiseFreq: { value: params.fogNoiseFreq },
+      fogNoiseSpeed: { value: params.fogNoiseSpeed },
+      fogNoiseImpact: { value: params.fogNoiseImpact },
+      time: { value: 0 }
+    });
+
+    shader.uniforms = THREE.UniformsUtils.merge([shader.uniforms, uniforms]);
+    terrainShader = shader
+  };
+  scene.add(mesh);
+
+  gui.add(params, "fogDensity", 0, 0.01).onChange(function() {
+    scene.fog.density = params.fogDensity;
+  });
+  gui.addColor(params, "fogHorizonColor").onChange(function() {
+    scene.fog.color.set(params.fogHorizonColor);
+    scene.background = new THREE.Color(params.fogHorizonColor);
+  });
+  gui.addColor(params, "fogNearColor").onChange(function() {
+    terrainShader.uniforms.fogNearColor = {
+      value: new THREE.Color(params.fogNearColor)
+    };
+  });
+  gui.add(params, "fogNoiseFreq", 0, 0.01, 0.0012).onChange(function() {
+    terrainShader.uniforms.fogNoiseFreq.value = params.fogNoiseFreq;
+  });
+  gui.add(params, "fogNoiseSpeed", 0, 1000, 100).onChange(function() {
+    terrainShader.uniforms.fogNoiseSpeed.value = params.fogNoiseSpeed;
+  });
+  gui.add(params, "fogNoiseImpact", 0, 1).onChange(function() {
+    terrainShader.uniforms.fogNoiseImpact.value = params.fogNoiseImpact;
+  });
 
   // Boat
   let boatMesh = null
@@ -112,7 +178,7 @@
     (gltf) => {
       console.log(gltf);
       boatMesh = gltf.scene;
-      boatMesh.scale.set(0.05, 0.05, 0.05)
+      boatMesh.scale.set(0.2, 0.2, 0.2)
       scene.add(boatMesh);
     },
     undefined,  // Optionally handle progress here
@@ -122,7 +188,10 @@
   );
 
   // lights
-  const ambientLight = new THREE.AmbientLight()
+
+  const ambientLight = new THREE.AmbientLight('#b9d5ff', 1)
+
+  gui.add(ambientLight, 'intensity').min(0).max(1).step(0.001)
   scene.add(ambientLight)
 
   /**
@@ -153,7 +222,7 @@
    */
 // Base camera
   const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 100)
-  camera.position.set(1, 1, 1)
+  camera.position.set(3, 1, 3)
   scene.add(camera)
 
   // Controls
@@ -181,18 +250,18 @@
     const elapsedTime = clock.getElapsedTime()
 
     // Water
-    waterMaterial.uniforms.uTime.value = elapsedTime
+    // waterMaterial.uniforms.uTime.value = elapsedTime
 
     // elevation
     if (boatMesh) {
-      const elevation =
-        Math.sin(boatMesh.position.x * waterMaterial.uniforms.uBigWavesFrequency.value.x +
-          elapsedTime * waterMaterial.uniforms.uBigWavesSpeed.value) *
-        Math.sin(boatMesh.position.z * waterMaterial.uniforms.uBigWavesFrequency.value.y +
-          elapsedTime * waterMaterial.uniforms.uBigWavesSpeed.value) *
-        waterMaterial.uniforms.uBigWavesElevation.value;
+      // const elevation =
+      //   Math.sin(boatMesh.position.x * waterMaterial.uniforms.uBigWavesFrequency.value.x +
+      //     elapsedTime * waterMaterial.uniforms.uBigWavesSpeed.value) *
+      //   Math.sin(boatMesh.position.z * waterMaterial.uniforms.uBigWavesFrequency.value.y +
+      //     elapsedTime * waterMaterial.uniforms.uBigWavesSpeed.value) *
+      //   waterMaterial.uniforms.uBigWavesElevation.value;
 
-      boatMesh.position.y = elevation - 0.05;
+      // boatMesh.position.y = elevation - 0.05;
     }
 
     // Update controls
