@@ -51,17 +51,15 @@
   scene.background = new THREE.Color(params.fogHorizonColor); // Couleur plus claire pour simuler du brouillard dans l'air
   // Fog
   const near = 0.05;
-  const far = 1.40;
+  const far = 1.80;
   const fog = new THREE.Fog(params.fogHorizonColor, near, far)
   scene.fog = fog
-
-  console.log(scene.fog.color)
 
   /**
    * Water
    */
     // Geometry
-  const waterGeometry = new THREE.PlaneGeometry(3.5, 3.5, 512, 512)
+  const waterGeometry = new THREE.PlaneGeometry(20, 20, 512, 512)
   waterGeometry.deleteAttribute('normal')   // delete for position, we compute it by ourself
   waterGeometry.deleteAttribute('uv')       // delete also not using it
 
@@ -114,6 +112,15 @@
   gui.add(waterMaterial.uniforms.uColorOffset, 'value').min(0).max(1).step(0.001).name('uColorOffset')
   gui.add(waterMaterial.uniforms.uColorMultiplier, 'value').min(0).max(10).step(0.001).name('uColorMultiplier')
 
+  gui.add(waterMaterial.uniforms.fogNear, 'value').min(0).max(20).step(0.01).name('fogNear')
+    .onChange(() => {
+      scene.fog.near = waterMaterial.uniforms.fogNear.value;
+    })
+  gui.add(waterMaterial.uniforms.fogFar, 'value').min(0).max(20).step(0.01).name('fogFar')
+    .onChange(() => {
+      scene.fog.far = waterMaterial.uniforms.fogFar.value;
+    })
+
   // Mesh
   const mesh = new THREE.Mesh(
     waterGeometry,
@@ -123,8 +130,6 @@
   mesh.rotation.x += -Math.PI * 0.5;
 
   scene.add(mesh);
-
-  console.log("Initial fogColor in Three.js:", waterMaterial.uniforms.fogColor.value);
 
   gui.add(params, "fogDensity", 0, 0.01).onChange(function() {
     scene.fog.density = params.fogDensity;
@@ -154,7 +159,6 @@
   gltfLoader.load(
     '/textures/ragging-sea-v2/scene.gltf',
     (gltf) => {
-      console.log(gltf);
       boatMesh = gltf.scene;
       boatMesh.scale.set(0.05, 0.05, 0.05)
       scene.add(boatMesh);
@@ -200,12 +204,8 @@
    */
 // Base camera
   const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 100)
-  camera.position.set(0.2,0.5,0.5)
+  camera.position.set(0,0.5,0.5)
   scene.add(camera)
-
-  // Controls
-  const controls = new OrbitControls(camera, canvas)
-  controls.enableDamping = true
 
   /**
    * Renderer
@@ -219,8 +219,9 @@
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
 
   /**
-   * Animate
+   * Functions
    */
+
   const waterElevation = (position, offset, time) =>
   {
     const elapsedTime = time;
@@ -234,9 +235,75 @@
     return elevation - offset
   }
 
+  // Variables de mouvement
+  const moveForward = { active: false, speed: 0.005 };
+  const moveBackward = { active: false, speed: 0.005 };
+  const turnLeft = { active: false, speed: 0.008 };
+  const turnRight = { active: false, speed: 0.008 };
+
+  document.addEventListener("keydown", (event) => {
+    switch (event.key) {
+      case "ArrowUp": // Avancer
+        moveForward.active = true;
+        break;
+      case "ArrowDown": // Reculer
+        moveBackward.active = true;
+        break;
+      case "ArrowLeft": // Tourner à gauche
+        turnLeft.active = true;
+        break;
+      case "ArrowRight": // Tourner à droite
+        turnRight.active = true;
+        break;
+    }
+  });
+
+  document.addEventListener("keyup", (event) => {
+    switch (event.key) {
+      case "ArrowUp":
+        moveForward.active = false;
+        break;
+      case "ArrowDown":
+        moveBackward.active = false;
+        break;
+      case "ArrowLeft":
+        turnLeft.active = false;
+        break;
+      case "ArrowRight":
+        turnRight.active = false;
+        break;
+    }
+  });
+
+  function thirdPersonCamera() {
+    if (!camera || !boatMesh) return;
+
+    const distance = .5; // Distance derrière le bateau
+    const height = .3; // Hauteur au-dessus du bateau
+    const smoothness = 0.1; // Facteur de lissage
+
+    // Obtenir la direction actuelle du bateau
+    const direction = new THREE.Vector3();
+    boatMesh.getWorldDirection(direction);
+
+    // Position cible de la caméra
+    const targetPosition = new THREE.Vector3();
+    targetPosition.copy(boatMesh.position);
+    targetPosition.addScaledVector(direction, distance);
+    targetPosition.y += height;
+
+    // Lissage du mouvement
+    camera.position.lerp(targetPosition, smoothness);
+    camera.lookAt(boatMesh.position);
+  }
+
+  /**
+   * Animate
+   */
+
   const clock = new THREE.Clock()
 
-  const tick = () =>
+  const tick = (t) =>
   {
     const elapsedTime = clock.getElapsedTime()
 
@@ -245,7 +312,6 @@
 
     // elevation
     if (boatMesh) {
-
       const deltaZ = 1;
       const deltaX = 0.2;
 
@@ -267,39 +333,42 @@
         0.06,
         elapsedTime);
 
-      const posWaterHeightXForward = waterElevation(
-        new THREE.Vector3(
-          boatMesh.position.x,
-          boatMesh.position.y,
-          boatMesh.position.z + deltaX,
-        ),
-        0.06,
-        elapsedTime);
-      const posWaterHeightXBack = waterElevation(
-        new THREE.Vector3(
-          boatMesh.position.x,
-          boatMesh.position.y,
-          boatMesh.position.z - deltaX,
-        ),
-        0.06,
-        elapsedTime);
-
       const slopeForwardZ = (posWaterHeightZForward - posWaterHeight) / deltaZ;
       const slopeBackZ = (posWaterHeightZBack - posWaterHeight) / deltaZ;
 
-      const slopeForwardX = (posWaterHeightXForward - posWaterHeight) / deltaX;
-      const slopeBackX = (posWaterHeightXBack - posWaterHeight) / deltaX;
 
       boatMesh.rotation.x = Math.atan(slopeBackZ - slopeForwardZ);
-      boatMesh.rotation.z = Math.atan(slopeForwardX - slopeBackX);
+      boatMesh.rotation.z = Math.atan(slopeForwardZ - slopeBackZ);
 
       // Mettre à jour la position Y
       boatMesh.position.y = posWaterHeight;
     }
 
+    if (boatMesh) {
+      // Appliquer les mouvements
+      if (moveForward.active) {
+        const direction = new THREE.Vector3();
+        boatMesh.getWorldDirection(direction);
+        boatMesh.position.addScaledVector(direction, -moveForward.speed);
+      }
 
-    // Update controls
-    controls.update()
+      if (moveBackward.active) {
+        const direction = new THREE.Vector3();
+        boatMesh.getWorldDirection(direction);
+        boatMesh.position.addScaledVector(direction, moveBackward.speed);
+      }
+
+      if (turnLeft.active) {
+        boatMesh.rotation.y += turnLeft.speed;
+      }
+
+      if (turnRight.active) {
+        boatMesh.rotation.y -= turnRight.speed;
+      }
+
+      // Mise à jour de la caméra
+      thirdPersonCamera();
+    }
 
     // Render
     renderer.render(scene, camera)
