@@ -14,6 +14,8 @@ varying float vElevation;
 varying vec3 vNormal;
 varying vec3 vPosition;
 
+#include <fog_pars_vertex>
+
 #ifdef USE_FOG
     varying float fogDepth;
     varying vec3 vFogWorldPosition;
@@ -54,12 +56,6 @@ void main()
     // Final position
     vec4 viewPosition = viewMatrix * modelPosition;
     vec4 projectedPosition = projectionMatrix * viewPosition;
-
-    #ifdef USE_FOG
-        viewPosition = viewMatrix * modelPosition;
-        fogDepth = -viewPosition.z; // Utiliser la vraie profondeur
-        vFogWorldPosition = modelPosition.xyz; // Stocker la position globale pour le brouillard d'horizon
-    #endif
 
     gl_Position = projectedPosition;
 
