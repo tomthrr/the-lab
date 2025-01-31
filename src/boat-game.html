@@ -26,7 +26,7 @@
 
   const params = {
     fogNearColor: 0xb2b2b3,
-    fogHorizonColor: 0x00ff1e,
+    fogHorizonColor: 0xfafafa,
     fogDensity: 0.0025,
     fogNoiseSpeed: 100,
     fogNoiseFreq: .0012,
@@ -51,7 +51,7 @@
   scene.background = new THREE.Color(params.fogHorizonColor); // Couleur plus claire pour simuler du brouillard dans l'air
   // Fog
   const near = 0.05;
-  const far = 9
+  const far = 1.40;
   const fog = new THREE.Fog(params.fogHorizonColor, near, far)
   scene.fog = fog
 
@@ -61,13 +61,13 @@
    * Water
    */
     // Geometry
-  const waterGeometry = new THREE.PlaneGeometry(20, 20, 512, 512)
+  const waterGeometry = new THREE.PlaneGeometry(3.5, 3.5, 512, 512)
   waterGeometry.deleteAttribute('normal')   // delete for position, we compute it by ourself
   waterGeometry.deleteAttribute('uv')       // delete also not using it
 
   // Colors
-  debugObject.depthColor = '#151c37';
-  debugObject.surfaceColor = '#3e4047';
+  debugObject.depthColor = '#2740a5';
+  debugObject.surfaceColor = '#000414';
 
   gui.addColor(debugObject, 'depthColor').onChange(() => { waterMaterial.uniforms.uDepthColor.value.set(debugObject.depthColor) })
   gui.addColor(debugObject, 'surfaceColor').onChange(() => { waterMaterial.uniforms.uSurfaceColor.value.set(debugObject.surfaceColor) })
@@ -81,10 +81,10 @@
         uTime: { value: 0 },
 
         uBigWavesElevation: { value: 0.2 },
-        uBigWavesFrequency: { value: new THREE.Vector2(4, 1.5) },
-        uBigWavesSpeed: { value: 0.75 },
+        uBigWavesFrequency: { value: new THREE.Vector2(1.284, 1.5) },
+        uBigWavesSpeed: { value: 0.39 },
 
-        uSmallWavesElevation: { value: 0.15 },
+        uSmallWavesElevation: { value: 0.074 },
         uSmallWavesFrequency: { value: 3 },
         uSmallWavesSpeed: { value: 0.2 },
         uSmallIterations: { value: 4 },
@@ -97,11 +97,6 @@
         fogColor: { value: new THREE.Color(params.fogHorizonColor) },
         fogNear: { value: near },
         fogFar: { value: far },
-
-        fogNearColor: { value: new THREE.Color(params.fogNearColor) },
-        fogNoiseFreq: { value: params.fogNoiseFreq },
-        fogNoiseSpeed: { value: params.fogNoiseSpeed },
-        fogNoiseImpact: { value: params.fogNoiseImpact }
       },
     fog: true
   })
@@ -127,36 +122,6 @@
 
   mesh.rotation.x += -Math.PI * 0.5;
 
-  // WORKS WITH MeshBasicMaterial
-  let terrainShader;
-  // mesh.material.onBeforeCompile = shader => {
-  //   shader.vertexShader = shader.vertexShader.replace(
-  //     `#include <fog_pars_vertex>`,
-  //     fogParsVert
-  //   );
-  //   shader.vertexShader = shader.vertexShader.replace(
-  //     `#include <fog_vertex>`,
-  //     fogVert
-  //   );
-  //   shader.fragmentShader = shader.fragmentShader.replace(
-  //     `#include <fog_pars_fragment>`,
-  //     fogParsFrag
-  //   );
-  //   shader.fragmentShader = shader.fragmentShader.replace(
-  //     `#include <fog_fragment>`,
-  //     fogFrag
-  //   );
-  //
-  //   const uniforms = ({
-  //     fogNearColor: { value: new THREE.Color(params.fogNearColor) },
-  //     fogNoiseFreq: { value: params.fogNoiseFreq },
-  //     fogNoiseSpeed: { value: params.fogNoiseSpeed },
-  //     fogNoiseImpact: { value: params.fogNoiseImpact },
-  //   });
-  //
-  //   shader.uniforms = THREE.UniformsUtils.merge([shader.uniforms, uniforms]);
-  //     terrainShader = shader
-  // };
   scene.add(mesh);
 
   console.log("Initial fogColor in Three.js:", waterMaterial.uniforms.fogColor.value);
@@ -191,7 +156,7 @@
     (gltf) => {
       console.log(gltf);
       boatMesh = gltf.scene;
-      boatMesh.scale.set(0.2, 0.2, 0.2)
+      boatMesh.scale.set(0.05, 0.05, 0.05)
       scene.add(boatMesh);
     },
     undefined,  // Optionally handle progress here
@@ -235,7 +200,7 @@
    */
 // Base camera
   const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 100)
-  camera.position.set(3, 1, 3)
+  camera.position.set(0.2,0.5,0.5)
   scene.add(camera)
 
   // Controls
@@ -256,6 +221,19 @@
   /**
    * Animate
    */
+  const waterElevation = (position, offset, time) =>
+  {
+    const elapsedTime = time;
+    const elevation =
+      Math.sin(position.x * waterMaterial.uniforms.uBigWavesFrequency.value.x +
+        elapsedTime * waterMaterial.uniforms.uBigWavesSpeed.value) *
+      Math.sin(position.z * waterMaterial.uniforms.uBigWavesFrequency.value.y +
+        elapsedTime * waterMaterial.uniforms.uBigWavesSpeed.value) *
+      waterMaterial.uniforms.uBigWavesElevation.value;
+
+    return elevation - offset
+  }
+
   const clock = new THREE.Clock()
 
   const tick = () =>
@@ -267,15 +245,38 @@
 
     // elevation
     if (boatMesh) {
-      const elevation =
-        Math.sin(boatMesh.position.x * waterMaterial.uniforms.uBigWavesFrequency.value.x +
-          elapsedTime * waterMaterial.uniforms.uBigWavesSpeed.value) *
-        Math.sin(boatMesh.position.z * waterMaterial.uniforms.uBigWavesFrequency.value.y +
-          elapsedTime * waterMaterial.uniforms.uBigWavesSpeed.value) *
-        waterMaterial.uniforms.uBigWavesElevation.value;
 
-      boatMesh.position.y = elevation - 0.05;
+      const deltaZ = 0.2;
+      const deltaX = 0.2;
+
+      const posWaterHeight = waterElevation(boatMesh.position, 0.05, elapsedTime);
+      const posWaterHeightZForward = waterElevation(
+        new THREE.Vector3(
+          boatMesh.position.x,
+          boatMesh.position.y,
+          boatMesh.position.z + deltaZ,
+        ),
+        0.05,
+        elapsedTime);
+      const posWaterHeightZBack = waterElevation(
+        new THREE.Vector3(
+          boatMesh.position.x,
+          boatMesh.position.y,
+          boatMesh.position.z - deltaZ,
+        ),
+        0.05,
+        elapsedTime);
+
+      const slopeForward = (posWaterHeightZForward - posWaterHeight) / deltaZ;
+      const slopeBack = (posWaterHeightZBack - posWaterHeight) / deltaZ;
+
+      boatMesh.rotation.x = Math.atan(slopeBack - slopeForward);
+      boatMesh.rotation.z = Math.atan(slopeForward - slopeBack);
+
+      // Mettre à jour la position Y
+      boatMesh.position.y = posWaterHeight;
     }
+
 
     // Update controls
     controls.update()
