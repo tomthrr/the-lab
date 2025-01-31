@@ -246,17 +246,17 @@
     // elevation
     if (boatMesh) {
 
-      const deltaZ = 0.2;
+      const deltaZ = 1;
       const deltaX = 0.2;
 
-      const posWaterHeight = waterElevation(boatMesh.position, 0.05, elapsedTime);
+      const posWaterHeight = waterElevation(boatMesh.position, 0.06, elapsedTime);
       const posWaterHeightZForward = waterElevation(
         new THREE.Vector3(
           boatMesh.position.x,
           boatMesh.position.y,
           boatMesh.position.z + deltaZ,
         ),
-        0.05,
+        0.06,
         elapsedTime);
       const posWaterHeightZBack = waterElevation(
         new THREE.Vector3(
@@ -264,14 +264,34 @@
           boatMesh.position.y,
           boatMesh.position.z - deltaZ,
         ),
-        0.05,
+        0.06,
         elapsedTime);
 
-      const slopeForward = (posWaterHeightZForward - posWaterHeight) / deltaZ;
-      const slopeBack = (posWaterHeightZBack - posWaterHeight) / deltaZ;
+      const posWaterHeightXForward = waterElevation(
+        new THREE.Vector3(
+          boatMesh.position.x,
+          boatMesh.position.y,
+          boatMesh.position.z + deltaX,
+        ),
+        0.06,
+        elapsedTime);
+      const posWaterHeightXBack = waterElevation(
+        new THREE.Vector3(
+          boatMesh.position.x,
+          boatMesh.position.y,
+          boatMesh.position.z - deltaX,
+        ),
+        0.06,
+        elapsedTime);
 
-      boatMesh.rotation.x = Math.atan(slopeBack - slopeForward);
-      boatMesh.rotation.z = Math.atan(slopeForward - slopeBack);
+      const slopeForwardZ = (posWaterHeightZForward - posWaterHeight) / deltaZ;
+      const slopeBackZ = (posWaterHeightZBack - posWaterHeight) / deltaZ;
+
+      const slopeForwardX = (posWaterHeightXForward - posWaterHeight) / deltaX;
+      const slopeBackX = (posWaterHeightXBack - posWaterHeight) / deltaX;
+
+      boatMesh.rotation.x = Math.atan(slopeBackZ - slopeForwardZ);
+      boatMesh.rotation.z = Math.atan(slopeForwardX - slopeBackX);
 
       // Mettre à jour la position Y
       boatMesh.position.y = posWaterHeight;
