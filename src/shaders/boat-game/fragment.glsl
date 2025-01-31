@@ -8,6 +8,7 @@ uniform float uColorOffset;
 uniform float uColorMultiplier;
 
 uniform vec3 fogHorizonColor;
+uniform vec3 uBoatPosition;
 
 varying float vElevation;
 varying vec3 vNormal;
@@ -47,7 +48,7 @@ void main()
         vec3(1.0),            // Light color
         10.0,                 // Light intensity,
         normal,               // Normal
-        vec3(0.0, 0.25, 0.0), // Light position
+        vec3(uBoatPosition.x, 0.25, uBoatPosition.z), // Light position
         viewDirection,        // View direction
         60.0,                 // Specular power
         vPosition,            // Position

@@ -22,7 +22,6 @@
   import waterVertexShader from './shaders/boat-game/vertex.glsl'
   import waterFragmentShader from './shaders/boat-game/fragment.glsl'
   import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
-  import {fogFrag, fogParsFrag, fogParsVert, fogVert} from "./shaders/boat-game/FogReplace.js";
 
   const params = {
     fogNearColor: 0xb2b2b3,
@@ -36,9 +35,16 @@
   /**
    * Base
    */
-// Debug
+  // Debug
   const gui = new GUI({ width: 340 })
-  const debugObject = {}
+
+  const boatFolder = gui.addFolder('Boat')
+  const fogFolder = gui.addFolder('Fog')
+  const sea = gui.addFolder('Sea')
+
+  const debugObject = { debug: false }
+
+  gui.add(debugObject, 'debug').name('cameraControls')
 
   // Canvas
   const canvas = document.querySelector('canvas.webgl')
@@ -49,6 +55,7 @@
   // Scene
   const scene = new THREE.Scene()
   scene.background = new THREE.Color(params.fogHorizonColor); // Couleur plus claire pour simuler du brouillard dans l'air
+
   // Fog
   const near = 0.05;
   const far = 1.80;
@@ -67,8 +74,8 @@
   debugObject.depthColor = '#2740a5';
   debugObject.surfaceColor = '#000414';
 
-  gui.addColor(debugObject, 'depthColor').onChange(() => { waterMaterial.uniforms.uDepthColor.value.set(debugObject.depthColor) })
-  gui.addColor(debugObject, 'surfaceColor').onChange(() => { waterMaterial.uniforms.uSurfaceColor.value.set(debugObject.surfaceColor) })
+  sea.addColor(debugObject, 'depthColor').onChange(() => { waterMaterial.uniforms.uDepthColor.value.set(debugObject.depthColor) })
+  sea.addColor(debugObject, 'surfaceColor').onChange(() => { waterMaterial.uniforms.uSurfaceColor.value.set(debugObject.surfaceColor) })
 
   // Material
   const waterMaterial = new THREE.ShaderMaterial({
@@ -92,6 +99,8 @@
         uColorOffset: { value: 0.925 },
         uColorMultiplier: { value: 1 },
 
+        uBoatPosition: { value: new THREE.Vector3() },
+
         fogColor: { value: new THREE.Color(params.fogHorizonColor) },
         fogNear: { value: near },
         fogFar: { value: far },
@@ -99,24 +108,24 @@
     fog: true
   })
 
-  gui.add(waterMaterial.uniforms.uBigWavesElevation, 'value').min(0).max(1).step(0.001).name('uBigWavesElevation')
-  gui.add(waterMaterial.uniforms.uBigWavesFrequency.value, 'x').min(0).max(10).step(0.001).name('uBigWavesFrequencyX')
-  gui.add(waterMaterial.uniforms.uBigWavesFrequency.value, 'y').min(0).max(10).step(0.001).name('uBigWavesFrequencyY')
-  gui.add(waterMaterial.uniforms.uBigWavesSpeed, 'value').min(0).max(4).step(0.001).name('uBigWavesSpeed')
+  sea.add(waterMaterial.uniforms.uBigWavesElevation, 'value').min(0).max(1).step(0.001).name('uBigWavesElevation')
+  sea.add(waterMaterial.uniforms.uBigWavesFrequency.value, 'x').min(0).max(10).step(0.001).name('uBigWavesFrequencyX')
+  sea.add(waterMaterial.uniforms.uBigWavesFrequency.value, 'y').min(0).max(10).step(0.001).name('uBigWavesFrequencyY')
+  sea.add(waterMaterial.uniforms.uBigWavesSpeed, 'value').min(0).max(4).step(0.001).name('uBigWavesSpeed')
 
-  gui.add(waterMaterial.uniforms.uSmallWavesElevation, 'value').min(0).max(1).step(0.001).name('uSmallWavesElevation')
-  gui.add(waterMaterial.uniforms.uSmallWavesFrequency, 'value').min(0).max(30).step(0.001).name('uSmallWavesFrequency')
-  gui.add(waterMaterial.uniforms.uSmallWavesSpeed, 'value').min(0).max(4).step(0.001).name('uSmallWavesSpeed')
-  gui.add(waterMaterial.uniforms.uSmallIterations, 'value').min(0).max(5).step(1).name('uSmallIterations')
+  sea.add(waterMaterial.uniforms.uSmallWavesElevation, 'value').min(0).max(1).step(0.001).name('uSmallWavesElevation')
+  sea.add(waterMaterial.uniforms.uSmallWavesFrequency, 'value').min(0).max(30).step(0.001).name('uSmallWavesFrequency')
+  sea.add(waterMaterial.uniforms.uSmallWavesSpeed, 'value').min(0).max(4).step(0.001).name('uSmallWavesSpeed')
+  sea.add(waterMaterial.uniforms.uSmallIterations, 'value').min(0).max(5).step(1).name('uSmallIterations')
 
-  gui.add(waterMaterial.uniforms.uColorOffset, 'value').min(0).max(1).step(0.001).name('uColorOffset')
-  gui.add(waterMaterial.uniforms.uColorMultiplier, 'value').min(0).max(10).step(0.001).name('uColorMultiplier')
+  sea.add(waterMaterial.uniforms.uColorOffset, 'value').min(0).max(1).step(0.001).name('uColorOffset')
+  sea.add(waterMaterial.uniforms.uColorMultiplier, 'value').min(0).max(10).step(0.001).name('uColorMultiplier')
 
-  gui.add(waterMaterial.uniforms.fogNear, 'value').min(0).max(20).step(0.01).name('fogNear')
+  fogFolder.add(waterMaterial.uniforms.fogNear, 'value').min(0).max(20).step(0.01).name('fogNear')
     .onChange(() => {
       scene.fog.near = waterMaterial.uniforms.fogNear.value;
     })
-  gui.add(waterMaterial.uniforms.fogFar, 'value').min(0).max(20).step(0.01).name('fogFar')
+  fogFolder.add(waterMaterial.uniforms.fogFar, 'value').min(0).max(20).step(0.01).name('fogFar')
     .onChange(() => {
       scene.fog.far = waterMaterial.uniforms.fogFar.value;
     })
@@ -131,27 +140,13 @@
 
   scene.add(mesh);
 
-  gui.add(params, "fogDensity", 0, 0.01).onChange(function() {
+  fogFolder.add(params, "fogDensity", 0, 0.01).onChange(function() {
     scene.fog.density = params.fogDensity;
   });
-  gui.addColor(params, "fogNearColor").onChange(function() {
+  fogFolder.addColor(params, "fogNearColor").onChange(function() {
     waterMaterial.uniforms.fogNearColor = {
       value: new THREE.Color(params.fogNearColor)
     };
-  });
-  gui.add(params, "fogNoiseFreq", 0, 0.01, 0.0012).onChange(function() {
-    waterMaterial.uniforms.fogNoiseFreq.value = params.fogNoiseFreq;
-  });
-  gui.add(params, "fogNoiseSpeed", 0, 1000, 100).onChange(function() {
-    waterMaterial.uniforms.fogNoiseSpeed.value = params.fogNoiseSpeed;
-  });
-  gui.add(params, "fogNoiseImpact", 0, 1).onChange(function() {
-    waterMaterial.uniforms.fogNoiseImpact.value = params.fogNoiseImpact;
-  });
-  gui.addColor(params, "fogHorizonColor").onChange(function() {
-    scene.fog.color.set(params.fogHorizonColor);
-    scene.background = new THREE.Color(params.fogHorizonColor);
-    waterMaterial.uniforms.fogColor.value.set(params.fogHorizonColor);  // <-- Ajoute cette ligne
   });
 
   // Boat
@@ -162,6 +157,23 @@
       boatMesh = gltf.scene;
       boatMesh.scale.set(0.05, 0.05, 0.05)
       scene.add(boatMesh);
+    },
+    undefined,  // Optionally handle progress here
+    (error) => {
+      console.error('An error occurred loading the model:', error);
+    }
+  );
+
+  // Nessie
+  let nessie = null
+  gltfLoader.load(
+    '/textures/ragging-sea-v2/nessie.glb',
+    (gltf) => {
+      nessie = gltf.scene;
+      nessie.scale.set(0.02, 0.02, 0.02)
+      scene.add(nessie);
+      nessie.position.set(-5,-0.1,5)
+      nessie.rotation.set(0,-Math.PI * 0.25,0)
     },
     undefined,  // Optionally handle progress here
     (error) => {
@@ -202,7 +214,7 @@
   /**
    * Camera
    */
-// Base camera
+    // Base camera
   const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 100)
   camera.position.set(0,0.5,0.5)
   scene.add(camera)
@@ -240,6 +252,11 @@
   const moveBackward = { active: false, speed: 0.005 };
   const turnLeft = { active: false, speed: 0.008 };
   const turnRight = { active: false, speed: 0.008 };
+
+  boatFolder.add(moveForward, 'speed').min(0).max(0.01).step(0.0001).name('SpeedBoatForward')
+  boatFolder.add(moveBackward, 'speed').min(0).max(.01).step(0.0001).name('SpeedBoatBackward')
+  boatFolder.add(turnLeft, 'speed').min(0).max(.01).step(0.0001).name('LeftSteeringAngle')
+  boatFolder.add(turnRight, 'speed').min(0).max(.01).step(0.0001).name('RightSteeringAngle')
 
   document.addEventListener("keydown", (event) => {
     switch (event.key) {
@@ -303,6 +320,10 @@
 
   const clock = new THREE.Clock()
 
+  // Debug
+  const controls = new OrbitControls(camera, canvas)
+  controls.enableDamping = true;
+
   const tick = (t) =>
   {
     const elapsedTime = clock.getElapsedTime()
@@ -345,6 +366,9 @@
     }
 
     if (boatMesh) {
+      // Position de la lumiere shader
+      waterMaterial.uniforms.uBoatPosition.value = boatMesh.position;
+
       // Appliquer les mouvements
       if (moveForward.active) {
         const direction = new THREE.Vector3();
@@ -367,7 +391,14 @@
       }
 
       // Mise à jour de la caméra
-      thirdPersonCamera();
+      if (!debugObject.debug) {
+          thirdPersonCamera();
+      }
+    }
+
+
+    if (debugObject.debug) {
+        controls.update()
     }
 
     // Render
