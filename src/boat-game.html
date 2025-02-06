@@ -22,6 +22,8 @@
   import waterVertexShader from './shaders/boat-game/vertex.glsl'
   import waterFragmentShader from './shaders/boat-game/fragment.glsl'
   import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
+  import { SimplexNoise } from "three/addons/math/SimplexNoise.js";
+
 
   const params = {
     fogNearColor: 0xb2b2b3,
@@ -36,13 +38,14 @@
    * Base
    */
   // Debug
+  const isDevelopementMode = window.location.href.includes("localhost");
   const gui = new GUI({ width: 340 })
 
   const boatFolder = gui.addFolder('Boat')
   const fogFolder = gui.addFolder('Fog')
   const sea = gui.addFolder('Sea')
 
-  const debugObject = { debug: false }
+  const debugObject = { debug: isDevelopementMode }
 
   gui.add(debugObject, 'debug').name('cameraControls')
 
@@ -57,8 +60,8 @@
   scene.background = new THREE.Color(params.fogHorizonColor); // Couleur plus claire pour simuler du brouillard dans l'air
 
   // Fog
-  const near = 0.05;
-  const far = 1.80;
+  const near = 0.8;
+  const far = 2.5;
   const fog = new THREE.Fog(params.fogHorizonColor, near, far)
   scene.fog = fog
 
@@ -181,8 +184,95 @@
     }
   );
 
-  // lights
+  // Wind Lines
+  // Extract from :
+  // https://codepen.io/boytchev/pen/qBLNEVZ
+  const tempCanvas = document.createElement("canvas");
+  tempCanvas.width = 64;
+  tempCanvas.height = 8;
 
+  const context = tempCanvas.getContext("2d");
+  const gradient = context.createLinearGradient(0, 0, 64, 0);
+  gradient.addColorStop(0.0, "rgba(255,255,255,0)");
+  gradient.addColorStop(0.5, "rgba(255,255,255,128)");
+  gradient.addColorStop(1.0, "rgba(255,255,255,0)");
+
+  context.fillStyle = gradient;
+  context.fillRect(0, 0, 64, 8);
+
+  const texture = new THREE.CanvasTexture(tempCanvas);
+
+  const windParams = {
+    numLines: 150,
+    speed: 0.02,
+    intensity: 4,
+  };
+
+  let lines = [];
+
+  function createWindLines() {
+    lines = [];
+    for (let i = 0; i < windParams.numLines; i++) {
+      // Creation des lignes
+      const line = new THREE.Mesh(
+        new THREE.PlaneGeometry(1, 1, 20, 1),
+        new THREE.MeshBasicMaterial({
+          map: texture,
+          side: THREE.DoubleSide,
+          transparent: true,
+          depthWrite: false,
+        })
+      );
+
+      // Position aléatoire
+      line.position.set(
+        (Math.random() - 0.5) * 20,
+        Math.random() - 0.5,
+        (Math.random() - 0.5) * 20
+      );
+
+      // ajout d'une variation unique pour chaque lignes
+      line.rnda = Math.random();
+      line.rndb = Math.random();
+      line.rndc = Math.random();
+      line.rndd = Math.random();
+
+      lines.push(line);
+      scene.add(line);
+    }
+  }
+
+  function updateWindLines() {
+    lines.forEach(line => scene.remove(line));
+    createWindLines();
+  }
+
+  createWindLines();
+
+  function flowLine(time, line) {
+    // Animation des lignes de vent
+    time = time / 3000;
+    for (let i = 0; i < 42; i++) {
+      let t = time + (i % 21) / 60,
+        x = windParams.intensity * Math.sin(5 * line.rnda * t + 6 * line.rndb),
+        y = windParams.intensity * Math.cos(5 * line.rndc * t + 6 * line.rndd),
+        z = elevation(x, y) + 0.5 + 0.04 * (i > 20 ? 1 : -1) * Math.cos((i % 21 - 10) / 8);
+
+      if (!isNaN(x) && !isNaN(y) && !isNaN(z)) {
+        line.geometry.attributes.position.setXYZ(i, x, z, -y);
+      }
+    }
+    line.geometry.attributes.position.needsUpdate = true;
+  }
+
+  const windFolder = gui.addFolder("Wind Lines");
+  windFolder.add(windParams, "numLines", 10, 200, 1).name("Number of Lines").onChange(updateWindLines);
+  windFolder.add(windParams, "speed", 0.01, 0.1, 0.001).name("Wind Speed");
+  windFolder.add(windParams, "intensity", 1, 10, 0.1).name("Wind Intensity");
+
+  /**
+   * Lights
+   */
   const ambientLight = new THREE.AmbientLight('#dedede', 1)
 
   gui.add(ambientLight, 'intensity').min(0).max(1).step(0.001)
@@ -216,7 +306,7 @@
    */
     // Base camera
   const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 100)
-  camera.position.set(0,0.5,0.5)
+  camera.position.set(0,0.5,1)
   scene.add(camera)
 
   /**
@@ -233,7 +323,7 @@
   /**
    * Functions
    */
-
+  const simplex = new SimplexNoise()
   const waterElevation = (position, offset, time) =>
   {
     const elapsedTime = time;
@@ -245,6 +335,18 @@
       waterMaterial.uniforms.uBigWavesElevation.value;
 
     return elevation - offset
+  }
+
+  function elevation( x, y )
+  {
+    // Fonction délévation pour la hauteur des windlines
+    if( x*x > 22.9 ) return -1;
+    if( y*y > 22.9 ) return -1;
+
+    const major = 0.6*simplex.noise( 0.1*x, 0.1*y ),
+      minor = 0.2*simplex.noise( 0.3*x, 0.3*y );
+
+    return major + minor;
   }
 
   // Variables de mouvement
@@ -259,17 +361,18 @@
   boatFolder.add(turnRight, 'speed').min(0).max(.01).step(0.0001).name('RightSteeringAngle')
 
   document.addEventListener("keydown", (event) => {
+    console.log(event.key)
     switch (event.key) {
-      case "ArrowUp": // Avancer
+      case "z": // Avancer
         moveForward.active = true;
         break;
-      case "ArrowDown": // Reculer
+      case "s": // Reculer
         moveBackward.active = true;
         break;
-      case "ArrowLeft": // Tourner à gauche
+      case "q": // Tourner à gauche
         turnLeft.active = true;
         break;
-      case "ArrowRight": // Tourner à droite
+      case "d": // Tourner à droite
         turnRight.active = true;
         break;
     }
@@ -277,16 +380,16 @@
 
   document.addEventListener("keyup", (event) => {
     switch (event.key) {
-      case "ArrowUp":
+      case "z":
         moveForward.active = false;
         break;
-      case "ArrowDown":
+      case "s":
         moveBackward.active = false;
         break;
-      case "ArrowLeft":
+      case "q":
         turnLeft.active = false;
         break;
-      case "ArrowRight":
+      case "d":
         turnRight.active = false;
         break;
     }
@@ -330,6 +433,9 @@
 
     // Water
     waterMaterial.uniforms.uTime.value = elapsedTime
+
+    // Wind lines
+    for( let line of lines ) flowLine( t, line );
 
     // elevation
     if (boatMesh) {
