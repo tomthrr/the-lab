@@ -23,7 +23,7 @@
   import waterFragmentShader from './shaders/boat-game/fragment.glsl'
   import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
   import { SimplexNoise } from "three/addons/math/SimplexNoise.js";
-
+  import {Line2, LineGeometry, LineMaterial} from "three/addons";
 
   const params = {
     fogNearColor: 0xb2b2b3,
@@ -62,8 +62,8 @@
   // Fog
   const near = 0.8;
   const far = 2.5;
-  const fog = new THREE.Fog(params.fogHorizonColor, near, far)
-  scene.fog = fog
+  // const fog = new THREE.Fog(params.fogHorizonColor, near, far)
+  // scene.fog = fog
 
   /**
    * Water
@@ -203,7 +203,7 @@
   const texture = new THREE.CanvasTexture(tempCanvas);
 
   const windParams = {
-    numLines: 150,
+    numLines: 0,
     speed: 0.02,
     intensity: 4,
   };
@@ -270,6 +270,50 @@
   windFolder.add(windParams, "speed", 0.01, 0.1, 0.001).name("Wind Speed");
   windFolder.add(windParams, "intensity", 1, 10, 0.1).name("Wind Intensity");
 
+
+  // Lightning
+  const points = [];
+  const pointsCount = 8;
+  const heightLightning = 3;
+  const interY = heightLightning / (pointsCount - 1);
+
+  for (let i = 0; i < pointsCount; i++) {
+    points.push(
+      (Math.random() - 0.5),
+      i * interY,
+      (Math.random() - 0.5),
+    );
+  }
+
+  const lightningGeometry = new LineGeometry();
+  lightningGeometry.setPositions(points)
+
+  const lightningMaterial = new LineMaterial({
+    color: 0xffff00,
+    linewidth: 5,
+    emissive: new THREE.Color(0xFFFF00), // Helps with glow
+    transparent: true,
+    resolution: new THREE.Vector2(window.innerWidth, window.innerHeight), // REQUIRED for linewidth to work
+  });
+
+  const lightning = new Line2(lightningGeometry, lightningMaterial);
+  lightning.computeLineDistances();
+  scene.add(lightning);
+
+  let opacityLightning = 1,
+        opacitySpeed = 0.01;
+
+  function animateLightning() {
+    opacityLightning -= opacitySpeed;
+    if (opacityLightning < 0) {
+      opacityLightning = 1;
+    }
+    lightning.material.opacity = opacityLightning;
+    requestAnimationFrame(animateLightning);
+  }
+
+  animateLightning()
+
   /**
    * Lights
    */
@@ -291,6 +335,10 @@
     // Update sizes
     sizes.width = window.innerWidth
     sizes.height = window.innerHeight
+
+    //Update lightning
+    lightningMaterial.resolution.set(window.innerWidth, window.innerHeight);
+
 
     // Update camera
     camera.aspect = sizes.width / sizes.height
@@ -314,7 +362,10 @@
    */
   const renderer = new THREE.WebGLRenderer({
     canvas: canvas,
-    antialias: true
+    antialias: true,
+    powerPreference: "high-performance",
+    stencil: false,
+    depth: false
   })
   renderer.toneMapping = THREE.ACESFilmicToneMapping
   renderer.setSize(sizes.width, sizes.height)
@@ -361,7 +412,6 @@
   boatFolder.add(turnRight, 'speed').min(0).max(.01).step(0.0001).name('RightSteeringAngle')
 
   document.addEventListener("keydown", (event) => {
-    console.log(event.key)
     switch (event.key) {
       case "z": // Avancer
         moveForward.active = true;
