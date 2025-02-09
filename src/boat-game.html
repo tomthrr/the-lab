@@ -24,6 +24,7 @@
   import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
   import { SimplexNoise } from "three/addons/math/SimplexNoise.js";
   import {Line2, LineGeometry, LineMaterial} from "three/addons";
+  import {BlendFunction, EffectComposer, EffectPass, RenderPass, SelectiveBloomEffect} from "postprocessing";
 
   const params = {
     fogNearColor: 0xb2b2b3,
@@ -273,46 +274,42 @@
 
   // Lightning
   const points = [];
+  const wdth = [];
   const pointsCount = 8;
   const heightLightning = 3;
   const interY = heightLightning / (pointsCount - 1);
 
   for (let i = 0; i < pointsCount; i++) {
-    points.push(
-      (Math.random() - 0.5),
-      i * interY,
-      (Math.random() - 0.5),
-    );
+      points.push(new THREE.Vector3(
+              (Math.random() - 0.5),
+              i * interY,
+              (Math.random() - 0.5),
+      ));
+      wdth.push(30);
   }
 
-  const lightningGeometry = new LineGeometry();
-  lightningGeometry.setPositions(points)
+  const lightningGeometry = new THREE.BufferGeometry().setFromPoints(points);
+  lightningGeometry.setAttribute("linewidth", new THREE.InstancedBufferAttribute(new Float32Array(wdth), 1));
 
-  const lightningMaterial = new LineMaterial({
-    color: 0xffff00,
-    linewidth: 5,
-    emissive: new THREE.Color(0xFFFF00), // Helps with glow
-    transparent: true,
-    resolution: new THREE.Vector2(window.innerWidth, window.innerHeight), // REQUIRED for linewidth to work
+  const lightningMaterial = new THREE.LineBasicMaterial({
+      color: 0xA6F6FF,
+      transparent: true,
+      opacity: 1,
+      side: THREE.DoubleSide
   });
 
-  const lightning = new Line2(lightningGeometry, lightningMaterial);
+  lightningMaterial.onBeforeCompile = (shader) => {
+      console.log("Shader modifié", innerWidth)
+      shader.vertexShader = `${shader.vertexShader}`.replace(
+              `uniform float linewidth;`,
+              `attribute float linewidth;`
+      );
+  };
+
+  const lightning = new THREE.Line(lightningGeometry, lightningMaterial);
   lightning.computeLineDistances();
+  lightning.scale.set(1, 1, 1);
   scene.add(lightning);
-
-  let opacityLightning = 1,
-        opacitySpeed = 0.01;
-
-  function animateLightning() {
-    opacityLightning -= opacitySpeed;
-    if (opacityLightning < 0) {
-      opacityLightning = 1;
-    }
-    lightning.material.opacity = opacityLightning;
-    requestAnimationFrame(animateLightning);
-  }
-
-  animateLightning()
 
   /**
    * Lights
@@ -356,6 +353,7 @@
   const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 100)
   camera.position.set(0,0.5,1)
   scene.add(camera)
+  camera.lookAt(lightning.position);
 
   /**
    * Renderer
@@ -370,6 +368,31 @@
   renderer.toneMapping = THREE.ACESFilmicToneMapping
   renderer.setSize(sizes.width, sizes.height)
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+
+  const composer = new EffectComposer( renderer );
+
+  const renderScene = new RenderPass( scene, camera );
+  composer.addPass( renderScene );
+
+  const effect = new SelectiveBloomEffect(scene, camera, {
+      blendFunction: BlendFunction.ADD,
+      mipmapBlur: true,
+      luminanceThreshold: 0.2,
+      luminanceSmoothing: 0.3,
+      intensity: 13.0
+  });
+  effect.luminancePass.enabled = true;
+  effect.ignoreBackground = true;
+  effect.mipmapBlurPass.radius = 0.25
+
+  const geometry = new THREE.BoxGeometry( 1, 1, 1 );
+  const material = new THREE.MeshBasicMaterial( {color: 0x00ff00} );
+  const cube = new THREE.Mesh( geometry, material );
+
+  effect.selection.add(lightning)
+
+  const effectPass = new EffectPass(camera, effect);
+  composer.addPass(effectPass);
 
   /**
    * Functions
@@ -557,8 +580,9 @@
         controls.update()
     }
 
+    composer.render();
+
     // Render
-    renderer.render(scene, camera)
 
     // Call tick again on the next frame
     window.requestAnimationFrame(tick)
