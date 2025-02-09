@@ -204,7 +204,7 @@
   const texture = new THREE.CanvasTexture(tempCanvas);
 
   const windParams = {
-    numLines: 0,
+    numLines: 30,
     speed: 0.02,
     intensity: 4,
   };
@@ -273,43 +273,84 @@
 
 
   // Lightning
-  const points = [];
-  const wdth = [];
-  const pointsCount = 8;
-  const heightLightning = 3;
-  const interY = heightLightning / (pointsCount - 1);
+  const lightningParam = {
+    countLightnings: 20,
+    lightningDuration: 1200,
+    lightningInterval: 800,
+  };
+  const lightnings = [];
 
-  for (let i = 0; i < pointsCount; i++) {
+  function createLightning() {
+    const points = [];
+    const wdth = [];
+    const pointsCount = 8;
+    const heightLightning = 3;
+    const interY = heightLightning / (pointsCount - 1);
+
+    for (let i = 0; i < pointsCount; i++) {
       points.push(new THREE.Vector3(
-              (Math.random() - 0.5),
-              i * interY,
-              (Math.random() - 0.5),
+        (Math.random() - 0.5),
+        i * interY,
+        (Math.random() - 0.5),
       ));
       wdth.push(30);
-  }
+    }
 
-  const lightningGeometry = new THREE.BufferGeometry().setFromPoints(points);
-  lightningGeometry.setAttribute("linewidth", new THREE.InstancedBufferAttribute(new Float32Array(wdth), 1));
+    const lightningGeometry = new THREE.BufferGeometry().setFromPoints(points);
+    lightningGeometry.setAttribute("linewidth", new THREE.InstancedBufferAttribute(new Float32Array(wdth), 1));
 
-  const lightningMaterial = new THREE.LineBasicMaterial({
+    const lightningMaterial = new THREE.LineBasicMaterial({
       color: 0xA6F6FF,
       transparent: true,
       opacity: 1,
       side: THREE.DoubleSide
-  });
+    });
 
-  lightningMaterial.onBeforeCompile = (shader) => {
-      console.log("Shader modifié", innerWidth)
+    lightningMaterial.onBeforeCompile = (shader) => {
       shader.vertexShader = `${shader.vertexShader}`.replace(
-              `uniform float linewidth;`,
-              `attribute float linewidth;`
+        `uniform float linewidth;`,
+        `attribute float linewidth;`
       );
-  };
+    };
 
-  const lightning = new THREE.Line(lightningGeometry, lightningMaterial);
-  lightning.computeLineDistances();
-  lightning.scale.set(1, 1, 1);
-  scene.add(lightning);
+    return new THREE.Line(lightningGeometry, lightningMaterial);
+  }
+
+  function spawnLightnings() {
+    lightnings.forEach(lightning => scene.remove(lightning));
+    lightnings.length = 0;
+
+    for (let i = 0; i < lightningParam.countLightnings; i++) {
+      const lightning = createLightning();
+      lightning.computeLineDistances();
+      lightning.scale.set(1, 1, 1);
+      lightning.position.set(
+        (Math.random() - .5) * 20,
+        Math.random() - .5,
+        (Math.random() - .5) * 20
+      );
+
+      lightnings.push(lightning);
+      effect.selection.add(lightning);
+      scene.add(lightning);
+    }
+
+    setTimeout(() => {
+      lightnings.forEach(lightning => {
+        scene.remove(lightning);
+        effect.selection.delete(lightning);
+      });
+
+      lightnings.length = 0;
+    }, lightningParam.lightningDuration * Math.random());
+  }
+
+  setInterval(spawnLightnings, lightningParam.lightningInterval);
+
+  const lightningFolder = gui.addFolder("Lightnings");
+  lightningFolder.add(lightningParam, "countLightnings", 10, 100, 1).name("Number of Lightnings");
+  lightningFolder.add(lightningParam, "lightningDuration", 100, 10000, 1).name("Duration timing");
+  lightningFolder.add(lightningParam, "lightningInterval", 100, 10000, 1).name("Interval timing");
 
   /**
    * Lights
@@ -333,10 +374,6 @@
     sizes.width = window.innerWidth
     sizes.height = window.innerHeight
 
-    //Update lightning
-    lightningMaterial.resolution.set(window.innerWidth, window.innerHeight);
-
-
     // Update camera
     camera.aspect = sizes.width / sizes.height
     camera.updateProjectionMatrix()
@@ -351,9 +388,8 @@
    */
     // Base camera
   const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 100)
-  camera.position.set(0,0.5,1)
+  camera.position.set(0,0.3,1.3)
   scene.add(camera)
-  camera.lookAt(lightning.position);
 
   /**
    * Renderer
@@ -384,12 +420,6 @@
   effect.luminancePass.enabled = true;
   effect.ignoreBackground = true;
   effect.mipmapBlurPass.radius = 0.25
-
-  const geometry = new THREE.BoxGeometry( 1, 1, 1 );
-  const material = new THREE.MeshBasicMaterial( {color: 0x00ff00} );
-  const cube = new THREE.Mesh( geometry, material );
-
-  effect.selection.add(lightning)
 
   const effectPass = new EffectPass(camera, effect);
   composer.addPass(effectPass);
@@ -471,8 +501,8 @@
   function thirdPersonCamera() {
     if (!camera || !boatMesh) return;
 
-    const distance = .5; // Distance derrière le bateau
-    const height = .3; // Hauteur au-dessus du bateau
+    const distance = .6; // Distance derrière le bateau
+    const height = .4; // Hauteur au-dessus du bateau
     const smoothness = 0.1; // Facteur de lissage
 
     // Obtenir la direction actuelle du bateau
@@ -580,9 +610,8 @@
         controls.update()
     }
 
-    composer.render();
-
     // Render
+    composer.render();
 
     // Call tick again on the next frame
     window.requestAnimationFrame(tick)
