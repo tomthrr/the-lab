@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+    <meta
+            name="viewport"
+            content="width=device-width, minimal-ui, viewport-fit=cover, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no"
+    />
+
+    <title>ThreeJS - 3D Cube</title>
+    <link href="assets/main.scss" rel="stylesheet" />
+    <script src="../../../../AppData/Local/Temp/script.js"></script>
+</head>
+<body class="container-project">
+<div class="container"></div>
+<canvas class="webgl"></canvas>
+<script type="module">
+  import * as THREE from 'three'
+  import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
+  import GUI from 'lil-gui'
+  import waterVertexShader from './shaders/boat-game/vertex.glsl'
+  import waterFragmentShader from './shaders/boat-game/fragment.glsl'
+  import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
+  import { SimplexNoise } from "three/addons/math/SimplexNoise.js";
+  import {Line2, LineGeometry, LineMaterial} from "three/addons";
+  import {BlendFunction, EffectComposer, EffectPass, RenderPass, SelectiveBloomEffect} from "postprocessing";
+
+  const params = {
+    fogNearColor: 0xb2b2b3,
+    fogHorizonColor: 0xfafafa,
+    fogDensity: 0.0025,
+    fogNoiseSpeed: 100,
+    fogNoiseFreq: .0012,
+    fogNoiseImpact: .5
+  };
+
+  /**
+   * Base
+   */
+  // Debug
+  const isDevelopementMode = window.location.href.includes("localhost");
+  const gui = new GUI({ width: 340 })
+
+  const boatFolder = gui.addFolder('Boat')
+  const fogFolder = gui.addFolder('Fog')
+  const sea = gui.addFolder('Sea')
+
+  const debugObject = { debug: isDevelopementMode }
+
+  gui.add(debugObject, 'debug').name('cameraControls')
+
+  // Canvas
+  const canvas = document.querySelector('canvas.webgl')
+
+  // Loaders
+  const gltfLoader = new GLTFLoader()
+
+  // Scene
+  const scene = new THREE.Scene()
+  scene.background = new THREE.Color(params.fogHorizonColor); // Couleur plus claire pour simuler du brouillard dans l'air
+
+  // Fog
+  const near = 0.8;
+  const far = 2.5;
+  const fog = new THREE.Fog(params.fogHorizonColor, near, far)
+  scene.fog = fog
+
+  /**
+   * Water
+   */
+    // Geometry
+  const waterGeometry = new THREE.PlaneGeometry(20, 20, 512, 512)
+  waterGeometry.deleteAttribute('normal')   // delete for position, we compute it by ourself
+  waterGeometry.deleteAttribute('uv')       // delete also not using it
+
+  // Colors
+  debugObject.depthColor = '#2740a5';
+  debugObject.surfaceColor = '#000414';
+
+  sea.addColor(debugObject, 'depthColor').onChange(() => { waterMaterial.uniforms.uDepthColor.value.set(debugObject.depthColor) })
+  sea.addColor(debugObject, 'surfaceColor').onChange(() => { waterMaterial.uniforms.uSurfaceColor.value.set(debugObject.surfaceColor) })
+
+  // Material
+  const waterMaterial = new THREE.ShaderMaterial({
+    vertexShader: waterVertexShader,
+    fragmentShader: waterFragmentShader,
+    uniforms:
+      {
+        uTime: { value: 0 },
+
+        uBigWavesElevation: { value: 0.2 },
+        uBigWavesFrequency: { value: new THREE.Vector2(1.284, 1.5) },
+        uBigWavesSpeed: { value: 0.39 },
+
+        uSmallWavesElevation: { value: 0.074 },
+        uSmallWavesFrequency: { value: 3 },
+        uSmallWavesSpeed: { value: 0.2 },
+        uSmallIterations: { value: 4 },
+
+        uDepthColor: { value: new THREE.Color(debugObject.depthColor) },
+        uSurfaceColor: { value: new THREE.Color(debugObject.surfaceColor) },
+        uColorOffset: { value: 0.925 },
+        uColorMultiplier: { value: 1 },
+
+        uBoatPosition: { value: new THREE.Vector3() },
+
+        fogColor: { value: new THREE.Color(params.fogHorizonColor) },
+        fogNear: { value: near },
+        fogFar: { value: far },
+      },
+    fog: true
+  })
+
+  sea.add(waterMaterial.uniforms.uBigWavesElevation, 'value').min(0).max(1).step(0.001).name('uBigWavesElevation')
+  sea.add(waterMaterial.uniforms.uBigWavesFrequency.value, 'x').min(0).max(10).step(0.001).name('uBigWavesFrequencyX')
+  sea.add(waterMaterial.uniforms.uBigWavesFrequency.value, 'y').min(0).max(10).step(0.001).name('uBigWavesFrequencyY')
+  sea.add(waterMaterial.uniforms.uBigWavesSpeed, 'value').min(0).max(4).step(0.001).name('uBigWavesSpeed')
+
+  sea.add(waterMaterial.uniforms.uSmallWavesElevation, 'value').min(0).max(1).step(0.001).name('uSmallWavesElevation')
+  sea.add(waterMaterial.uniforms.uSmallWavesFrequency, 'value').min(0).max(30).step(0.001).name('uSmallWavesFrequency')
+  sea.add(waterMaterial.uniforms.uSmallWavesSpeed, 'value').min(0).max(4).step(0.001).name('uSmallWavesSpeed')
+  sea.add(waterMaterial.uniforms.uSmallIterations, 'value').min(0).max(5).step(1).name('uSmallIterations')
+
+  sea.add(waterMaterial.uniforms.uColorOffset, 'value').min(0).max(1).step(0.001).name('uColorOffset')
+  sea.add(waterMaterial.uniforms.uColorMultiplier, 'value').min(0).max(10).step(0.001).name('uColorMultiplier')
+
+  fogFolder.add(waterMaterial.uniforms.fogNear, 'value').min(0).max(20).step(0.01).name('fogNear')
+    .onChange(() => {
+      scene.fog.near = waterMaterial.uniforms.fogNear.value;
+    })
+  fogFolder.add(waterMaterial.uniforms.fogFar, 'value').min(0).max(20).step(0.01).name('fogFar')
+    .onChange(() => {
+      scene.fog.far = waterMaterial.uniforms.fogFar.value;
+    })
+
+  // Mesh
+  const mesh = new THREE.Mesh(
+    waterGeometry,
+    waterMaterial
+  );
+
+  mesh.rotation.x += -Math.PI * 0.5;
+
+  scene.add(mesh);
+
+  fogFolder.add(params, "fogDensity", 0, 0.01).onChange(function() {
+    scene.fog.density = params.fogDensity;
+  });
+  fogFolder.addColor(params, "fogNearColor").onChange(function() {
+    waterMaterial.uniforms.fogNearColor = {
+      value: new THREE.Color(params.fogNearColor)
+    };
+  });
+
+  // Boat
+  let boatMesh = null
+  gltfLoader.load(
+    '/textures/ragging-sea-v2/scene.gltf',
+    (gltf) => {
+      boatMesh = gltf.scene;
+      boatMesh.scale.set(0.05, 0.05, 0.05)
+      scene.add(boatMesh);
+    },
+    undefined,  // Optionally handle progress here
+    (error) => {
+      console.error('An error occurred loading the model:', error);
+    }
+  );
+
+  // Nessie
+  let nessie = null
+  gltfLoader.load(
+    '/textures/ragging-sea-v2/nessie.glb',
+    (gltf) => {
+      nessie = gltf.scene;
+      nessie.scale.set(0.02, 0.02, 0.02)
+      scene.add(nessie);
+      nessie.position.set(-5,-0.1,5)
+      nessie.rotation.set(0,-Math.PI * 0.25,0)
+    },
+    undefined,  // Optionally handle progress here
+    (error) => {
+      console.error('An error occurred loading the model:', error);
+    }
+  );
+
+  // Wind Lines
+  // Extract from :
+  // https://codepen.io/boytchev/pen/qBLNEVZ
+  const tempCanvas = document.createElement("canvas");
+  tempCanvas.width = 64;
+  tempCanvas.height = 8;
+
+  const context = tempCanvas.getContext("2d");
+  const gradient = context.createLinearGradient(0, 0, 64, 0);
+  gradient.addColorStop(0.0, "rgba(255,255,255,0)");
+  gradient.addColorStop(0.5, "rgba(255,255,255,128)");
+  gradient.addColorStop(1.0, "rgba(255,255,255,0)");
+
+  context.fillStyle = gradient;
+  context.fillRect(0, 0, 64, 8);
+
+  const texture = new THREE.CanvasTexture(tempCanvas);
+
+  const windParams = {
+    numLines: 30,
+    speed: 0.02,
+    intensity: 4,
+  };
+
+  let lines = [];
+
+  function createWindLines() {
+    lines = [];
+    for (let i = 0; i < windParams.numLines; i++) {
+      // Creation des lignes
+      const line = new THREE.Mesh(
+        new THREE.PlaneGeometry(1, 1, 20, 1),
+        new THREE.MeshBasicMaterial({
+          map: texture,
+          side: THREE.DoubleSide,
+          transparent: true,
+          depthWrite: false,
+        })
+      );
+
+      // Position aléatoire
+      line.position.set(
+        (Math.random() - 0.5) * 20,
+        Math.random() - 0.5,
+        (Math.random() - 0.5) * 20
+      );
+
+      // ajout d'une variation unique pour chaque lignes
+      line.rnda = Math.random();
+      line.rndb = Math.random();
+      line.rndc = Math.random();
+      line.rndd = Math.random();
+
+      lines.push(line);
+      scene.add(line);
+    }
+  }
+
+  function updateWindLines() {
+    lines.forEach(line => scene.remove(line));
+    createWindLines();
+  }
+
+  createWindLines();
+
+  function flowLine(time, line) {
+    // Animation des lignes de vent
+    time = time / 3000;
+    for (let i = 0; i < 42; i++) {
+      let t = time + (i % 21) / 60,
+        x = windParams.intensity * Math.sin(5 * line.rnda * t + 6 * line.rndb),
+        y = windParams.intensity * Math.cos(5 * line.rndc * t + 6 * line.rndd),
+        z = elevation(x, y) + 0.5 + 0.04 * (i > 20 ? 1 : -1) * Math.cos((i % 21 - 10) / 8);
+
+      if (!isNaN(x) && !isNaN(y) && !isNaN(z)) {
+        line.geometry.attributes.position.setXYZ(i, x, z, -y);
+      }
+    }
+    line.geometry.attributes.position.needsUpdate = true;
+  }
+
+  const windFolder = gui.addFolder("Wind Lines");
+  windFolder.add(windParams, "numLines", 10, 200, 1).name("Number of Lines").onChange(updateWindLines);
+  windFolder.add(windParams, "speed", 0.01, 0.1, 0.001).name("Wind Speed");
+  windFolder.add(windParams, "intensity", 1, 10, 0.1).name("Wind Intensity");
+
+
+  // Lightning
+  const lightningParam = {
+    countLightnings: 20,
+    lightningDuration: 1200,
+    lightningInterval: 800,
+  };
+  const lightnings = [];
+
+  function createLightning() {
+    const points = [];
+    const wdth = [];
+    const pointsCount = 8;
+    const heightLightning = 3;
+    const interY = heightLightning / (pointsCount - 1);
+
+    for (let i = 0; i < pointsCount; i++) {
+      points.push(new THREE.Vector3(
+        (Math.random() - 0.5),
+        i * interY,
+        (Math.random() - 0.5),
+      ));
+      wdth.push(30);
+    }
+
+    const lightningGeometry = new THREE.BufferGeometry().setFromPoints(points);
+    lightningGeometry.setAttribute("linewidth", new THREE.InstancedBufferAttribute(new Float32Array(wdth), 1));
+
+    const lightningMaterial = new THREE.LineBasicMaterial({
+      color: 0xA6F6FF,
+      transparent: true,
+      opacity: 1,
+      side: THREE.DoubleSide
+    });
+
+    lightningMaterial.onBeforeCompile = (shader) => {
+      shader.vertexShader = `${shader.vertexShader}`.replace(
+        `uniform float linewidth;`,
+        `attribute float linewidth;`
+      );
+    };
+
+    return new THREE.Line(lightningGeometry, lightningMaterial);
+  }
+
+  function spawnLightnings() {
+    lightnings.forEach(lightning => scene.remove(lightning));
+    lightnings.length = 0;
+
+    for (let i = 0; i < lightningParam.countLightnings; i++) {
+      const lightning = createLightning();
+      lightning.computeLineDistances();
+      lightning.scale.set(1, 1, 1);
+      lightning.position.set(
+        (Math.random() - .5) * 20,
+        Math.random() - .5,
+        (Math.random() - .5) * 20
+      );
+
+      lightnings.push(lightning);
+      effect.selection.add(lightning);
+      scene.add(lightning);
+    }
+
+    setTimeout(() => {
+      lightnings.forEach(lightning => {
+        scene.remove(lightning);
+        effect.selection.delete(lightning);
+      });
+
+      lightnings.length = 0;
+    }, lightningParam.lightningDuration * Math.random());
+  }
+
+  setInterval(spawnLightnings, lightningParam.lightningInterval);
+
+  const lightningFolder = gui.addFolder("Lightnings");
+  lightningFolder.add(lightningParam, "countLightnings", 10, 100, 1).name("Number of Lightnings");
+  lightningFolder.add(lightningParam, "lightningDuration", 100, 10000, 1).name("Duration timing");
+  lightningFolder.add(lightningParam, "lightningInterval", 100, 10000, 1).name("Interval timing");
+
+  /**
+   * Lights
+   */
+  const ambientLight = new THREE.AmbientLight('#dedede', 1)
+
+  gui.add(ambientLight, 'intensity').min(0).max(1).step(0.001)
+  scene.add(ambientLight)
+
+  /**
+   * Sizes
+   */
+  const sizes = {
+    width: window.innerWidth,
+    height: window.innerHeight
+  }
+
+  window.addEventListener('resize', () =>
+  {
+    // Update sizes
+    sizes.width = window.innerWidth
+    sizes.height = window.innerHeight
+
+    // Update camera
+    camera.aspect = sizes.width / sizes.height
+    camera.updateProjectionMatrix()
+
+    // Update renderer
+    renderer.setSize(sizes.width, sizes.height)
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+  })
+
+  /**
+   * Camera
+   */
+    // Base camera
+  const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 100)
+  camera.position.set(0,0.3,1.3)
+  scene.add(camera)
+
+  /**
+   * Renderer
+   */
+  const renderer = new THREE.WebGLRenderer({
+    canvas: canvas,
+    antialias: true,
+    powerPreference: "high-performance",
+    stencil: false,
+    depth: false
+  })
+  renderer.toneMapping = THREE.ACESFilmicToneMapping
+  renderer.setSize(sizes.width, sizes.height)
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+
+  const composer = new EffectComposer( renderer );
+
+  const renderScene = new RenderPass( scene, camera );
+  composer.addPass( renderScene );
+
+  const effect = new SelectiveBloomEffect(scene, camera, {
+      blendFunction: BlendFunction.ADD,
+      mipmapBlur: true,
+      luminanceThreshold: 0.2,
+      luminanceSmoothing: 0.3,
+      intensity: 13.0
+  });
+  effect.luminancePass.enabled = true;
+  effect.ignoreBackground = true;
+  effect.mipmapBlurPass.radius = 0.25
+
+  const effectPass = new EffectPass(camera, effect);
+  composer.addPass(effectPass);
+
+  /**
+   * Functions
+   */
+  const simplex = new SimplexNoise()
+  const waterElevation = (position, offset, time) =>
+  {
+    const elapsedTime = time;
+    const elevation =
+      Math.sin(position.x * waterMaterial.uniforms.uBigWavesFrequency.value.x +
+        elapsedTime * waterMaterial.uniforms.uBigWavesSpeed.value) *
+      Math.sin(position.z * waterMaterial.uniforms.uBigWavesFrequency.value.y +
+        elapsedTime * waterMaterial.uniforms.uBigWavesSpeed.value) *
+      waterMaterial.uniforms.uBigWavesElevation.value;
+
+    return elevation - offset
+  }
+
+  function elevation( x, y )
+  {
+    // Fonction délévation pour la hauteur des windlines
+    if( x*x > 22.9 ) return -1;
+    if( y*y > 22.9 ) return -1;
+
+    const major = 0.6*simplex.noise( 0.1*x, 0.1*y ),
+      minor = 0.2*simplex.noise( 0.3*x, 0.3*y );
+
+    return major + minor;
+  }
+
+  // Variables de mouvement
+  const moveForward = { active: false, speed: 0.005 };
+  const moveBackward = { active: false, speed: 0.005 };
+  const turnLeft = { active: false, speed: 0.008 };
+  const turnRight = { active: false, speed: 0.008 };
+
+  boatFolder.add(moveForward, 'speed').min(0).max(0.01).step(0.0001).name('SpeedBoatForward')
+  boatFolder.add(moveBackward, 'speed').min(0).max(.01).step(0.0001).name('SpeedBoatBackward')
+  boatFolder.add(turnLeft, 'speed').min(0).max(.01).step(0.0001).name('LeftSteeringAngle')
+  boatFolder.add(turnRight, 'speed').min(0).max(.01).step(0.0001).name('RightSteeringAngle')
+
+  document.addEventListener("keydown", (event) => {
+    switch (event.key) {
+      case "z": // Avancer
+        moveForward.active = true;
+        break;
+      case "s": // Reculer
+        moveBackward.active = true;
+        break;
+      case "q": // Tourner à gauche
+        turnLeft.active = true;
+        break;
+      case "d": // Tourner à droite
+        turnRight.active = true;
+        break;
+    }
+  });
+
+  document.addEventListener("keyup", (event) => {
+    switch (event.key) {
+      case "z":
+        moveForward.active = false;
+        break;
+      case "s":
+        moveBackward.active = false;
+        break;
+      case "q":
+        turnLeft.active = false;
+        break;
+      case "d":
+        turnRight.active = false;
+        break;
+    }
+  });
+
+  function thirdPersonCamera() {
+    if (!camera || !boatMesh) return;
+
+    const distance = .6; // Distance derrière le bateau
+    const height = .4; // Hauteur au-dessus du bateau
+    const smoothness = 0.1; // Facteur de lissage
+
+    // Obtenir la direction actuelle du bateau
+    const direction = new THREE.Vector3();
+    boatMesh.getWorldDirection(direction);
+
+    // Position cible de la caméra
+    const targetPosition = new THREE.Vector3();
+    targetPosition.copy(boatMesh.position);
+    targetPosition.addScaledVector(direction, distance);
+    targetPosition.y += height;
+
+    // Lissage du mouvement
+    camera.position.lerp(targetPosition, smoothness);
+    camera.lookAt(boatMesh.position);
+  }
+
+  /**
+   * Animate
+   */
+
+  const clock = new THREE.Clock()
+
+  // Debug
+  const controls = new OrbitControls(camera, canvas)
+  controls.enableDamping = true;
+
+  const tick = (t) =>
+  {
+    const elapsedTime = clock.getElapsedTime()
+
+    // Water
+    waterMaterial.uniforms.uTime.value = elapsedTime
+
+    // Wind lines
+    for( let line of lines ) flowLine( t, line );
+
+    // elevation
+    if (boatMesh) {
+      const deltaZ = 1;
+      const deltaX = 0.2;
+
+      const posWaterHeight = waterElevation(boatMesh.position, 0.06, elapsedTime);
+      const posWaterHeightZForward = waterElevation(
+        new THREE.Vector3(
+          boatMesh.position.x,
+          boatMesh.position.y,
+          boatMesh.position.z + deltaZ,
+        ),
+        0.06,
+        elapsedTime);
+      const posWaterHeightZBack = waterElevation(
+        new THREE.Vector3(
+          boatMesh.position.x,
+          boatMesh.position.y,
+          boatMesh.position.z - deltaZ,
+        ),
+        0.06,
+        elapsedTime);
+
+      const slopeForwardZ = (posWaterHeightZForward - posWaterHeight) / deltaZ;
+      const slopeBackZ = (posWaterHeightZBack - posWaterHeight) / deltaZ;
+
+
+      boatMesh.rotation.x = Math.atan(slopeBackZ - slopeForwardZ);
+      boatMesh.rotation.z = Math.atan(slopeForwardZ - slopeBackZ);
+
+      // Mettre à jour la position Y
+      boatMesh.position.y = posWaterHeight;
+    }
+
+    if (boatMesh) {
+      // Position de la lumiere shader
+      waterMaterial.uniforms.uBoatPosition.value = boatMesh.position;
+
+      // Appliquer les mouvements
+      if (moveForward.active) {
+        const direction = new THREE.Vector3();
+        boatMesh.getWorldDirection(direction);
+        boatMesh.position.addScaledVector(direction, -moveForward.speed);
+      }
+
+      if (moveBackward.active) {
+        const direction = new THREE.Vector3();
+        boatMesh.getWorldDirection(direction);
+        boatMesh.position.addScaledVector(direction, moveBackward.speed);
+      }
+
+      if (turnLeft.active) {
+        boatMesh.rotation.y += turnLeft.speed;
+      }
+
+      if (turnRight.active) {
+        boatMesh.rotation.y -= turnRight.speed;
+      }
+
+      // Mise à jour de la caméra
+      if (!debugObject.debug) {
+          thirdPersonCamera();
+      }
+    }
+
+
+    if (debugObject.debug) {
+        controls.update()
+    }
+
+    // Render
+    composer.render();
+
+    // Call tick again on the next frame
+    window.requestAnimationFrame(tick)
+  }
+
+  tick()
+</script>
+</body>
+</html>

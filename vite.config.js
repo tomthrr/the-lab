@@ -61,6 +61,7 @@ export default {
           dynamiteRythm: resolve(__dirname, 'src/dynamite-rythm.html'),
           whiteBall: resolve(__dirname, 'src/white-ball.html'),
           SunFlowerXr: resolve(__dirname, 'src/sun-flower-xr.html'),
+          boatGame: resolve(__dirname, 'src/boat-game.html'),
           UniBloc: resolve(__dirname, 'src/uni-bloc.html'),
         }
       },
