@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+  <meta
+          name="viewport"
+          content="width=device-width, minimal-ui, viewport-fit=cover, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no"
+  />
+  <title>ThreeJS - Noise Color Grid</title>
+  <link href="assets/main.scss" rel="stylesheet" />
+</head>
+<body class="container-project">
+<div class="container"></div>
+<canvas class="webgl"></canvas>
+
+<script type="module">
+    import * as THREE from "three";
+    import { ImprovedNoise } from "three/addons";
+    import GUI from "lil-gui";
+
+    const canvas = document.querySelector("canvas.webgl");
+
+    // GUI Parameters
+    const parameters = {
+        color: {
+            scale: 0.08,
+            thresholdLow: 0.47,
+            thresholdHigh: 0.6,
+            intensity: 0.03,
+        },
+        points: {
+            scale: 0.01,
+            thresholdLow: 0.52,
+            thresholdHigh: 0.58,
+            intensity: 0.03,
+        },
+        decoration: {
+            scale: 0.05,
+            thresholdHigh: 0.62,
+            intensity: 0.03,
+        },
+        fColor: new THREE.Color("#f4567f"),
+        sColor: new THREE.Color("#ffb3c6"),
+        tColor: new THREE.Color("#0f0f0f"),
+    };
+
+    // Palette de couleurs
+    let colorDarkPink = new THREE.Color("#f4567f"); // Rose foncé
+    let colorLightPink = new THREE.Color("#ffb3c6"); // Rose clair
+    let colorBlack = new THREE.Color("#0f0f0f"); // Noir
+
+    const gui = new GUI();
+    const noiseColorFolder = gui.addFolder('Noise Color Grid');
+    noiseColorFolder.add(parameters.color, "scale").min(0.01).max(0.5).step(0.01).name("Noise Scale");
+    noiseColorFolder.add(parameters.color, "thresholdLow").min(0).max(1).step(0.01).name("Min Threshold");
+    noiseColorFolder.add(parameters.color, "thresholdHigh").min(0).max(1).step(0.01).name("Max Threshold");
+    noiseColorFolder.add(parameters.color, "intensity").min(0).max(1).step(0.001).name("Intensity");
+
+    const noisePointFolder = gui.addFolder('Noise Points Grid');
+    noisePointFolder.add(parameters.points, "scale").min(0.01).max(0.5).step(0.01).name("Noise Scale");
+    noisePointFolder.add(parameters.points, "thresholdLow").min(0).max(1).step(0.01).name("Min Threshold");
+    noisePointFolder.add(parameters.points, "thresholdHigh").min(0).max(1).step(0.01).name("Max Threshold");
+    noisePointFolder.add(parameters.points, "intensity").min(0).max(1).step(0.001).name("Intensity");
+
+    const decorationFolder = gui.addFolder('Noise Points Grid');
+    decorationFolder.add(parameters.decoration, "scale").min(0.01).max(0.5).step(0.01).name("Noise Scale");
+    decorationFolder.add(parameters.decoration, "thresholdHigh").min(0).max(1).step(0.01).name("Max Threshold");
+    decorationFolder.add(parameters.decoration, "intensity").min(0).max(1).step(0.001).name("Intensity");
+
+    gui.addColor(parameters, 'fColor').onChange((color) => {
+        colorDarkPink = new THREE.Color(color);
+    })
+    gui.addColor(parameters, 'sColor').onChange((color) => {
+        colorLightPink = new THREE.Color(color);
+    })
+    gui.addColor(parameters, 'tColor').onChange((color) => {
+        colorBlack = new THREE.Color(color);
+    })
+
+    // Scene
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x000000);
+
+    const noise = new ImprovedNoise();
+    const rows = 50, cols = 100;
+    const spacing = 0.2;
+    const particles = [];
+    const circleGeometry = new THREE.CircleGeometry(0.1, 30);
+
+    for (let i = 0; i < rows; i++) {
+        for (let j = 0; j < cols; j++) {
+            const mesh = new THREE.Mesh(circleGeometry, new THREE.MeshBasicMaterial());
+            mesh.position.set(
+                    j * spacing - (cols * spacing) / 2,
+                    i * spacing - (rows * spacing) / 2,
+                    0
+            );
+            scene.add(mesh);
+            particles.push({ mesh, i, j });
+        }
+    }
+
+    const points = [];
+    const pointGeometry = new THREE.CircleGeometry(0.02, 30);
+    for (let i = 0; i < rows; i++) {
+        for (let j = 0; j < cols; j++) {
+            const mesh = new THREE.Mesh(pointGeometry, new THREE.MeshBasicMaterial());
+            mesh.position.set(
+                    j * spacing - (cols * spacing) / 2,
+                    i * spacing - (rows * spacing) / 2,
+                    0
+            );
+            scene.add(mesh);
+            points.push({ mesh, i, j });
+        }
+    }
+
+    const textureLoader = new THREE.TextureLoader()
+    const starTexture = textureLoader.load('/textures/particles-wave/star.png')
+    const squareTexture = textureLoader.load('/textures/particles-wave/square.png')
+
+    const starMaterial = new THREE.MeshBasicMaterial({
+        color: new THREE.Color('#FF9BD2'),
+        alphaMap: starTexture,
+        transparent: true,
+    })
+
+    const squareMaterial = new THREE.MeshBasicMaterial({
+        color: new THREE.Color('#FF9BD2'),
+        alphaMap: squareTexture,
+        transparent: true,
+    })
+
+    const decorations = [];
+
+    parameters.decoration.density = 0.1;
+    decorationFolder.add(parameters.decoration, "density").min(0).max(1).step(0.01).name("Decoration Density");
+
+    const deco = new THREE.PlaneGeometry(0.2, 0.2);
+    for (let i = 0; i < rows; i++) {
+        for (let j = 0; j < cols; j++) {
+            const mesh = new THREE.Mesh(deco, new THREE.MeshBasicMaterial());
+            mesh.position.set(
+                    j * spacing - (cols * spacing) / 2,
+                    i * spacing - (rows * spacing) / 2,
+                    0
+            );
+            scene.add(mesh);
+            decorations.push({ mesh, i, j });
+        }
+    }
+
+    // Camera
+    const sizes = { width: window.innerWidth, height: window.innerHeight };
+    const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 100);
+    camera.position.z = 8;
+    scene.add(camera);
+
+    // Renderer
+    const renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
+    renderer.setSize(sizes.width, sizes.height);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+    window.addEventListener("resize", () => {
+        sizes.width = window.innerWidth;
+        sizes.height = window.innerHeight;
+        camera.aspect = sizes.width / sizes.height;
+        camera.updateProjectionMatrix();
+        renderer.setSize(sizes.width, sizes.height);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    });
+
+    const clock = new THREE.Clock();
+
+    // Décalage aléatoire pour éviter un bruit identique à chaque rechargement
+    const noiseOffset = {
+        x: Math.random() * 1000,
+        y: Math.random() * 1000,
+        z: Math.random() * 1000,
+    };
+
+    const tick = () => {
+        const elapsedTime = clock.getElapsedTime();
+
+        // Mise à jour des particules colorées avec le bruit modifié
+        particles.forEach(({ mesh, i, j }) => {
+            const noiseValue = (noise.noise(
+                    i * parameters.color.scale + noiseOffset.x,
+                    j * parameters.color.scale + noiseOffset.y,
+                    elapsedTime * parameters.color.intensity + noiseOffset.z
+            ) + 1) / 2;
+
+            if (noiseValue > parameters.color.thresholdHigh) {
+                mesh.material.color.copy(colorBlack);
+            } else if (noiseValue > parameters.color.thresholdLow) {
+                mesh.material.color.copy(colorLightPink);
+            } else {
+                mesh.material.color.copy(colorDarkPink);
+            }
+        });
+
+        // Mise à jour des petits points
+        points.forEach(({ mesh, i, j }) => {
+            const noiseValue = (noise.noise(
+                    i * parameters.points.scale + noiseOffset.x,
+                    j * parameters.points.scale + noiseOffset.y,
+                    elapsedTime * parameters.points.intensity + noiseOffset.z
+            ) + 1) / 2;
+
+            if (noiseValue > parameters.points.thresholdHigh) {
+                mesh.material.color.copy(colorBlack);
+                mesh.material.transparent = true;
+            } else if (noiseValue > parameters.points.thresholdLow) {
+                mesh.material.color.copy(colorLightPink);
+            } else {
+                mesh.material.color.copy(colorDarkPink);
+            }
+        });
+
+        decorations.forEach(({ mesh, i, j }) => {
+            const noiseValue = (noise.noise(
+                    i * parameters.decoration.scale + noiseOffset.x,
+                    j * parameters.decoration.scale + noiseOffset.y,
+                    elapsedTime * parameters.decoration.intensity + noiseOffset.z
+            ) + 1) / 2;
+
+            if (noiseValue > 0.5) {
+                if (noiseValue > parameters.decoration.thresholdHigh) {
+                    mesh.material = starMaterial;
+                } else {
+                    mesh.material = squareMaterial;
+                }
+                mesh.visible = true;
+            } else {
+                mesh.visible = false;
+            }
+
+        });
+
+        renderer.render(scene, camera);
+        window.requestAnimationFrame(tick);
+    };
+
+
+    tick();
+</script>
+</body>
+</html>
