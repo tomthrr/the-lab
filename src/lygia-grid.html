@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ThreeJS - Grid Presets</title>
+    <style>
+        body { margin: 0; overflow: hidden; }
+        canvas { display: block; }
+    </style>
+</head>
+<body>
+<canvas class="webgl"></canvas>
+
+<script type="module">
+  import * as THREE from "three";
+  import GUI from "https://cdn.jsdelivr.net/npm/lil-gui@0.18/+esm";
+
+  const canvas = document.querySelector("canvas.webgl");
+  const scene = new THREE.Scene();
+
+  // Presets de couleurs
+  const palettes = {
+    "Lygia Grid": ["#B04E26", "#007443", "#263E66", "#CABCA2", "#C3C3B7", "#8EA39C", "#E5C03C", "#66857F", "#3A5D57"],
+    "4900 Farben": [
+      "#e0040b", "#048936", "#0175b9", "#fde51d", "#c38cba", "#0078b6",
+      "#e85b0d", "#692e6a", "#f6ef1c", "#0a8532", "#3a3583", "#faf6f3",
+      "#040200", "#3f184b", "#e20112", "#8f9394", "#e97340", "#c1cb0b",
+      "#c02f3a", "#e95b06", "#00862e"
+    ]
+  };
+
+  const parameters = {
+    preset: "Lygia Grid",
+    width: 50,
+    height: 80,
+    columns: 12,
+    rows: 10,
+    equalColumns: false,
+    smallColumns: [2, 4, 7, 8, 10, 11]
+  };
+
+  let mesh;
+  function createGrid() {
+    if (mesh) scene.remove(mesh);
+
+    const { width, height, columns, rows, smallColumns, equalColumns, preset } = parameters;
+
+    const geometry = new THREE.PlaneGeometry(1, 1);
+    const material = new THREE.MeshBasicMaterial({ vertexColors: true });
+
+    mesh = new THREE.InstancedMesh(geometry, material, columns * rows);
+    const dummy = new THREE.Object3D();
+    const colorArray = new Float32Array(columns * rows * 3);
+    const color = new THREE.Color();
+
+    let x = -width / 2;
+    const rowHeight = height / rows;
+    const baseColumnWidth = width / columns;
+    const palette = palettes[preset];
+
+    let index = 0;
+    for (let i = 0; i < columns; i++) {
+      let columnWidth = equalColumns ? baseColumnWidth : (smallColumns.includes(i + 1) ? baseColumnWidth * 0.5 : baseColumnWidth * 1.5);
+
+      for (let j = 0; j < rows; j++) {
+        dummy.position.set(x + columnWidth / 2, j * rowHeight - height / 2, 0);
+        dummy.scale.set(columnWidth, rowHeight, 1);
+        dummy.updateMatrix();
+        mesh.setMatrixAt(index, dummy.matrix);
+
+        color.set(palette[Math.floor(Math.random() * palette.length)]);
+        colorArray.set(color.toArray(), index * 3);
+
+        index++;
+      }
+      x += columnWidth;
+    }
+
+    geometry.setAttribute("color", new THREE.InstancedBufferAttribute(colorArray, 3));
+    scene.add(mesh);
+  }
+
+  function updatePreset() {
+    if (parameters.preset === "4900 Farben") {
+        parameters.equalColumns = true;
+        parameters.columns = 100;
+        parameters.rows = 100;
+        parameters.width = 100;
+        parameters.height = 100;
+    } else {
+      parameters.equalColumns = false;
+      parameters.columns = 12;
+      parameters.rows = 10;
+    }
+
+    createGrid();
+  }
+
+  const sizes = { width: window.innerWidth, height: window.innerHeight };
+  const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 150);
+  camera.position.set(0, 0, 70);
+  scene.add(camera);
+
+  const renderer = new THREE.WebGLRenderer({ canvas });
+  renderer.setSize(sizes.width, sizes.height);
+  renderer.setPixelRatio(window.devicePixelRatio);
+  renderer.setClearColor(0x333333);
+
+  const tick = () => {
+    renderer.render(scene, camera);
+    requestAnimationFrame(tick);
+  };
+
+  const gui = new GUI();
+  gui.add(parameters, "preset", Object.keys(palettes)).name("Preset").onChange(updatePreset);
+  gui.add(parameters, "columns", 5, 100, 1).onChange(createGrid);
+  gui.add(parameters, "rows", 5, 100, 1).onChange(createGrid);
+  gui.add(parameters, "equalColumns").name("Same Column Size").onChange(createGrid);
+
+  createGrid();
+  tick();
+
+  window.addEventListener("resize", () => {
+    sizes.width = window.innerWidth;
+    sizes.height = window.innerHeight;
+    camera.aspect = sizes.width / sizes.height;
+    camera.updateProjectionMatrix();
+    renderer.setSize(sizes.width, sizes.height);
+    renderer.setPixelRatio(window.devicePixelRatio);
+  });
+
+</script>
+</body>
+</html>

@@ -63,6 +63,7 @@ export default {
           SunFlowerXr: resolve(__dirname, 'src/sun-flower-xr.html'),
           boatGame: resolve(__dirname, 'src/boat-game.html'),
           UniBloc: resolve(__dirname, 'src/uni-bloc.html'),
+          LygiaGrid: resolve(__dirname, 'src/lygia-grid.html'),
         }
       },
     },
