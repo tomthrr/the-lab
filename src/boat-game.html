@@ -10,10 +10,46 @@
 
     <title>ThreeJS - 3D Cube</title>
     <link href="assets/main.scss" rel="stylesheet" />
+    <link href="assets/boat-game.scss" rel="stylesheet" />
     <script src="../../../../AppData/Local/Temp/script.js"></script>
 </head>
 <body class="container-project">
-<div class="container"></div>
+<div class="container">
+    <div class="play" id="play-container">
+        <div class="news-container">
+            <div class="header">
+                <h1>monster sighted in loch ness!</h1>
+            </div>
+            <div class="images">
+                <img src="/textures/ragging-sea-v2/ornament_left.jpg" alt="ornament" class="ornament" />
+                <img src="/textures/ragging-sea-v2/nessie.webp" alt="nessie" class="nessie" />
+                <img src="/textures/ragging-sea-v2/ornament_right.jpg" alt="ornament" class="ornament" />
+            </div>
+            <div class="content">
+                <div class="left">For centuries, tales of a great beast lurking beneath the waters of Loch Ness have fascinated and terrified locals. But now, new reports have reignited the legend.</div>
+                <div class="center">Several fishermen claim to have seen something massive moving just below the surface, with one describing "a dark silhouette, longer than any boat, gliding through the mist." Others report strange waves and disturbances, despite the lake being eerily still.</div>
+                <div class="right">Experts remain divided—some dismissing the sightings as mere folklore, while others insist this could be the most compelling evidence yet. What lies beneath the depths of Loch Ness? A myth… or something real?</div>
+            </div>
+            <div class="footer">
+                <div class="play-button" id="play-button">Play</div>
+                <p>Authorities advise caution to anyone venturing onto the water at night…</p>
+            </div>
+        </div>
+    </div>
+    <div class="slider hidden" id="slider">
+        <div class="slide active">Some speak of distant lands, lost in the mists of time…</div>
+        <div class="slide">Others tell of creatures rising from the depths, defying all reason…</div>
+        <div class="slide">But every story begins with a rumor…</div>
+        <div class="slide">And it’s a rumor that led you here.</div>
+        <div class="slide">As a marine cartographer, you sail the seas to map the unseen…</div>
+        <div class="slide">Forgotten islands, abandoned shores, waters no one dares to cross…</div>
+        <div class="slide">This time, you’ve been given an unusual task: to explore a vast lake connected to the sea, a place untouched for generations…</div>
+        <div class="slide">A shadow looms on the horizon… barely visible through the mist and rain.</div>
+        <div class="slide">They say something lurks beneath the surface…</div>
+        <div class="slide">But legends don’t scare a sailor like you, do they?</div>
+        <div class="slide">The storm is closing in… and the adventure begins.</div>
+    </div>
+</div>
 <canvas class="webgl"></canvas>
 <script type="module">
   import * as THREE from 'three'
@@ -28,12 +64,50 @@
 
   const params = {
     fogNearColor: 0xb2b2b3,
-    fogHorizonColor: 0xfafafa,
+    fogHorizonColor: 0x636769,
     fogDensity: 0.0025,
     fogNoiseSpeed: 100,
     fogNoiseFreq: .0012,
     fogNoiseImpact: .5
   };
+
+  /**
+   * Intro
+   */
+
+    const playButton = document.getElementById('play-button');
+    const playContainer = document.getElementById('play-container');
+    if (playButton) {
+        playButton.addEventListener('click', () => {
+          playContainer.classList.add('hidden');
+            document.querySelector('.news-container').classList.add('hidden');
+            document.querySelector('.slider').classList.remove('hidden');
+        })
+    }
+
+  /**
+   * Slider
+   */
+  let indexActive = 0;
+  const slider = document.getElementById('slider');
+
+  if (slider) {
+    const slides = slider.querySelectorAll('.slide');
+    slider.addEventListener('click', (e) => {
+      slides[indexActive].classList.remove('active');
+      indexActive++;
+      slides[indexActive].classList.add('active');
+
+    console.log(indexActive)
+      if (indexActive >= slides.length - 1) {
+        console.log("ici")
+        indexActive = 0;
+        slides.forEach(slide => slide.classList.remove('active'));
+        slider.classList.add('hidden');
+      }
+    })
+  }
+
 
   /**
    * Base
@@ -49,6 +123,10 @@
   const debugObject = { debug: isDevelopementMode }
 
   gui.add(debugObject, 'debug').name('cameraControls')
+
+  if (window.location.href.includes("localhost")) {
+    gui.close();
+  }
 
   // Canvas
   const canvas = document.querySelector('canvas.webgl')
@@ -147,16 +225,11 @@
   fogFolder.add(params, "fogDensity", 0, 0.01).onChange(function() {
     scene.fog.density = params.fogDensity;
   });
-  fogFolder.addColor(params, "fogNearColor").onChange(function() {
-    waterMaterial.uniforms.fogNearColor = {
-      value: new THREE.Color(params.fogNearColor)
-    };
-  });
 
   // Boat
   let boatMesh = null
   gltfLoader.load(
-    '/textures/ragging-sea-v2/scene.gltf',
+    '/textures/ragging-sea-v2/boat.glb',
     (gltf) => {
       boatMesh = gltf.scene;
       boatMesh.scale.set(0.05, 0.05, 0.05)
@@ -502,7 +575,7 @@
     if (!camera || !boatMesh) return;
 
     const distance = .6; // Distance derrière le bateau
-    const height = .4; // Hauteur au-dessus du bateau
+    const height = .35; // Hauteur au-dessus du bateau
     const smoothness = 0.1; // Facteur de lissage
 
     // Obtenir la direction actuelle du bateau
@@ -591,11 +664,11 @@
         boatMesh.position.addScaledVector(direction, moveBackward.speed);
       }
 
-      if (turnLeft.active) {
+      if (turnLeft.active && (moveForward.active || moveBackward.active)) {
         boatMesh.rotation.y += turnLeft.speed;
       }
 
-      if (turnRight.active) {
+      if (turnRight.active && (moveForward.active || moveBackward.active)) {
         boatMesh.rotation.y -= turnRight.speed;
       }
 
