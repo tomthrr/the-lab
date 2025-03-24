@@ -124,7 +124,7 @@
 
   gui.add(debugObject, 'debug').name('cameraControls')
 
-  if (window.location.href.includes("localhost")) {
+  if (!window.location.href.includes("localhost")) {
     gui.close();
   }
 
