@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+    <meta
+            name="viewport"
+            content="width=device-width, minimal-ui, viewport-fit=cover, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no"
+    />
+
+    <title>ThreeJS - Fluid</title>
+    <link href="assets/main.scss" rel="stylesheet" />
+</head>
+<body class="container-project">
+<div class="container"></div>
+<canvas class="webgl"></canvas>
+<script type="module">
+  import * as THREE from 'three'
+  import GUI from "lil-gui";
+
+  const canvas = document.querySelector('canvas.webgl');
+
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x0f0f0f);
+
+  const sizes = {
+    width: window.innerWidth,
+    height: window.innerHeight
+  }
+
+  const mouse = new THREE.Vector2(0.5, 0.5)
+  window.addEventListener('mousemove', (event) => {
+    mouse.x = event.clientX / sizes.width
+    mouse.y = 1.0 - event.clientY / sizes.height // flip Y to match WebGL space
+  })
+
+  /*
+   *  Textures
+   */
+
+  const textureLoader = new THREE.TextureLoader();
+  const backgroundImage = textureLoader.load('/corgi.jpg'); // your image path
+
+  // Textures
+  const geometry = new THREE.PlaneGeometry(2, 2)
+
+  const params = {
+    dissipation: 1,
+    radius: 0.05,
+    border: 0.01,
+    noiseScale: 10.0,
+    imageBaseOpacity: 10.0,
+    distortionStrength: 0.002
+  };
+
+  // Shader material
+  const material = new THREE.ShaderMaterial({
+    uniforms: {
+      u_time: { value: 0 },
+      u_mouse: { value: mouse },
+      u_resolution: { value: new THREE.Vector2(sizes.width, sizes.height) },
+      u_prevFrame: { value: null },
+      u_dissipation: { value: params.dissipation },
+      u_radius: { value: params.radius },
+      u_border: { value: params.border },
+      u_noiseScale: { value: params.noiseScale },
+      u_distortionStrength: { value: params.distortionStrength },
+    },
+    vertexShader: `
+    void main() {
+      gl_Position = vec4(position, 1.0);
+    }
+  `,
+    fragmentShader: `
+    precision highp float;
+
+uniform float u_time;
+uniform vec2 u_mouse;
+uniform vec2 u_resolution;
+uniform sampler2D u_prevFrame;
+
+uniform float u_dissipation;
+uniform float u_radius;
+uniform float u_border;
+uniform float u_noiseScale;
+uniform float u_distortionStrength;
+
+
+uniform sampler2D u_image;
+
+float hash(vec2 p) {
+  return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
+}
+float noise(vec2 p) {
+  vec2 i = floor(p);
+  vec2 f = fract(p);
+
+  float a = hash(i);
+  float b = hash(i + vec2(1.0, 0.0));
+  float c = hash(i + vec2(0.0, 1.0));
+  float d = hash(i + vec2(1.0, 1.0));
+
+  vec2 u = f * f * (3.0 - 2.0 * f);
+
+  return mix(a, b, u.x) +
+         (c - a)* u.y * (1.0 - u.x) +
+         (d - b) * u.x * u.y;
+}
+
+float circle(vec2 uv, vec2 disc_center, float disc_radius, float border_size) {
+  float dist = length(uv - disc_center);
+  return smoothstep(disc_radius + border_size, disc_radius - border_size, dist);
+}
+
+vec3 desaturate(vec3 color) {
+  float gray = dot(color, vec3(0.299, 0.587, 0.114));
+  return mix(vec3(gray), color, 0.2); // mostly gray
+}
+
+void main() {
+  vec2 uv = gl_FragCoord.xy / u_resolution.xy;
+
+  // Noise-based distortion
+  float n = noise(uv * u_noiseScale);
+  vec2 offset = vec2(cos(n * 6.2831), sin(n * 6.2831)) * u_distortionStrength;
+  vec2 distortedUV = uv + offset;
+
+  // Fluid trail fading over time
+  vec3 previous = texture2D(u_prevFrame, distortedUV).rgb * u_dissipation;
+
+  // Mouse ripple circle
+  float c = circle(uv, u_mouse, u_radius, u_border);
+  vec3 current = vec3(c);
+
+  // Combine fluid and input
+  vec3 fluidColor = previous + current;
+
+  // Sample the background image
+  vec3 imageColor = texture2D(u_image, uv).rgb;
+  vec3 blandColor = desaturate(imageColor);
+
+  // Blend image based on fluid intensity
+  float revealStrength = clamp(fluidColor.r * 2.0, 0.0, 1.0);
+  vec3 imageFinalColor = mix(blandColor, imageColor, fluidColor);
+  vec3 finalColor = mix(vec3(0.), imageFinalColor, revealStrength);
+
+  gl_FragColor = vec4(finalColor, 1.0);
+}
+
+  `
+  })
+
+  material.uniforms.u_image = { value: backgroundImage };
+
+
+
+  const gui = new GUI();
+
+  gui.add(params, 'dissipation', 0.8, 1.0, 0.001).onChange(value => {
+    material.uniforms.u_dissipation.value = value;
+  });
+
+  gui.add(params, 'radius', 0.005, 0.1, 0.001).onChange(value => {
+    material.uniforms.u_radius.value = value;
+  });
+
+  gui.add(params, 'border', 0.0, 0.05, 0.001).onChange(value => {
+    material.uniforms.u_border.value = value;
+  });
+
+  gui.add(params, 'noiseScale', 1.0, 50.0, 0.1).onChange(value => {
+    material.uniforms.u_noiseScale.value = value;
+  });
+
+  gui.add(params, 'distortionStrength', 0.0, 0.01, 0.0001).onChange(value => {
+    material.uniforms.u_distortionStrength.value = value;
+  });
+
+
+  // Mesh
+  const mesh = new THREE.Mesh(geometry, material)
+  scene.add(mesh)
+
+  /**
+   * FBO
+   */
+
+    // Render targets for fbo
+    let renderTarget1 = new THREE.WebGLRenderTarget(sizes.width, sizes.height)
+    let renderTarget2 = new THREE.WebGLRenderTarget(sizes.width, sizes.height)
+    let currentTarget = renderTarget1
+    let nextTarget = renderTarget2
+
+
+  /**
+   * Lights
+   */
+
+  /**
+   * Sizes
+   */
+
+  window.addEventListener('resize', () => {
+    renderTarget1.dispose();
+    renderTarget2.dispose();
+    renderTarget1 = new THREE.WebGLRenderTarget(sizes.width, sizes.height);
+    renderTarget2 = new THREE.WebGLRenderTarget(sizes.width, sizes.height);
+
+    //updates sizes
+    sizes.width = window.innerWidth
+    sizes.height = window.innerHeight
+
+    camera.aspect = sizes.width / sizes.height
+    camera.updateProjectionMatrix()
+
+    // Update renderer
+    renderer.setSize(sizes.width, sizes.height)
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+
+    // Update render targets
+    renderTarget1.setSize(sizes.width, sizes.height)
+    renderTarget2.setSize(sizes.width, sizes.height)
+    material.uniforms.u_resolution.value.set(sizes.width, sizes.height)
+  })
+
+  /**
+   * Camera
+   */
+    // Base camera
+  const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 100)
+  camera.position.x = 0
+  camera.position.y = 0
+  camera.position.z = 2
+  scene.add(camera)
+
+  /**
+   * Renderer
+   */
+  const renderer = new THREE.WebGLRenderer({
+    canvas: canvas
+  })
+  renderer.setSize(sizes.width, sizes.height)
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+
+  /**
+   * Animate
+   */
+  const clock = new THREE.Clock()
+
+  const tick = () => {
+    const elapsedTime = clock.getElapsedTime();
+    material.uniforms.u_time.value = elapsedTime;
+
+    // Update render target texture
+    material.uniforms.u_prevFrame.value = currentTarget.texture;
+
+    // Render to framebuffer
+    renderer.setRenderTarget(nextTarget);
+    renderer.render(scene, camera);
+    renderer.setRenderTarget(null); // back to screen
+
+    // Swap render targets
+    const temp = currentTarget;
+    currentTarget = nextTarget;
+    nextTarget = temp;
+
+    // Render to screen using the updated texture
+    renderer.render(scene, camera);
+
+    requestAnimationFrame(tick);
+  };
+
+  tick()
+</script>
+</body>
+</html>
