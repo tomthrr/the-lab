@@ -66,6 +66,7 @@ export default {
           LygiaGrid: resolve(__dirname, 'src/lygia-grid.html'),
           Fluid: resolve(__dirname, 'src/fluid.html'),
           WaterColor: resolve(__dirname, 'src/watercolor-effect.html'),
+          PaintingEffect: resolve(__dirname, 'src/painting-image.html'),
         }
       },
     },
