@@ -91,7 +91,6 @@
     raycaster.setFromCamera(pointer, camera);
     const intersects = raycaster.intersectObjects([cube])
     if (intersects.length > 0) {
-      console.log(intersects[0].point);
       dummy.position.copy(intersects[0].point);
     }
   }
