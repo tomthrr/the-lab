@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+    <meta
+            name="viewport"
+            content="width=device-width, minimal-ui, viewport-fit=cover, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no"
+    />
+
+    <title>ThreeJS - Watercolor effect</title>
+    <link href="assets/main.scss" rel="stylesheet" />
+</head>
+<body class="container-project">
+<div class="container"></div>
+<canvas class="webgl"></canvas>
+<script type="module">
+  import * as THREE from 'three'
+  import vertexShader from './shaders/watercolor-effect/vertex.glsl'
+  import fragmentShader from './shaders/watercolor-effect/fragment.glsl'
+  import fboShader from './shaders/watercolor-effect/fbo.glsl'
+
+  /**
+  Comment ca marche ?
+  - On a plusieurs scènes, on rends la scène de base avec le cercle qui suit notre souris
+  - On rends la scène blanche avec le plan verre
+  - On rends le shader fbo (watercolor)
+  - on rends l'image finale
+
+  on ajoute a ca un effet ping pong, qui va permettre de se baser sur les frames
+  précédentes et garder cet effet trail, qui permet de créer des trainées.
+   */
+  const canvas = document.querySelector('canvas.webgl');
+
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x0f0f0f);
+
+  const whiteScene = new THREE.Scene();
+  const whitebg = new THREE.Mesh(
+    new THREE.PlaneGeometry(20, 20),
+    new THREE.MeshBasicMaterial({color: 0xffffff})
+  );
+
+  whiteScene.add(whitebg);
+  whitebg.position.z = -1;
+
+  const whiteQuad = new THREE.Mesh(
+    new THREE.BoxGeometry(0.4, 0.4, 0.4),
+    new THREE.MeshBasicMaterial({color: 0x00ff00})
+  );
+
+  whiteScene.add(whiteQuad)
+
+  /*
+    *  Textures
+    */
+  const geometry = new THREE.PlaneGeometry( 10, 10 );
+  const material = new THREE.MeshBasicMaterial( {color: 0x000000} );
+  const cube = new THREE.Mesh( geometry, material );
+  scene.add( cube );
+
+  const textureLoader = new THREE.TextureLoader();
+  const texture = textureLoader.load('/textures/particles-wave/ball.png')
+
+  const dummy = new THREE.Mesh(
+    new THREE.SphereGeometry(0.1, 32, 32),
+    new THREE.MeshBasicMaterial({
+      color: 0xffffff,
+      // map: texture,
+      // transparent: true,
+      // alphaMap: texture,
+      // depthWrite: false,
+      // blending: THREE.AdditiveBlending
+    })
+  );
+  scene.add( dummy );
+
+  /**
+   * Mouse Events
+   */
+
+  const raycaster = new THREE.Raycaster();
+  const pointer = new THREE.Vector2();
+
+  function onPointerMove( event ) {
+    // calculate pointer position in normalized device coordinates
+    // (-1 to +1) for both components
+    pointer.x = ( event.clientX / window.innerWidth ) * 2 - 1;
+    pointer.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
+
+    raycaster.setFromCamera(pointer, camera);
+    const intersects = raycaster.intersectObjects([cube])
+    if (intersects.length > 0) {
+      console.log(intersects[0].point);
+      dummy.position.copy(intersects[0].point);
+    }
+  }
+
+
+  /**
+   * Sizes
+   */
+  const sizes = {
+    width: window.innerWidth,
+    height: window.innerHeight
+  }
+
+  window.addEventListener('resize', () => {
+    //updates sizes
+    sizes.width = window.innerWidth
+    sizes.height = window.innerHeight
+
+    camera.aspect = sizes.width / sizes.height
+    camera.updateProjectionMatrix()
+
+    // Update renderer
+    renderer.setSize(sizes.width, sizes.height)
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+  })
+
+  /**
+   * Pipeline
+   */
+  // scene for calculation/pingponging
+  const sourceTarget = new THREE.WebGLRenderTarget(sizes.width, sizes.height);
+
+  let targetA = new THREE.WebGLRenderTarget(sizes.width, sizes.height);
+  let targetB = new THREE.WebGLRenderTarget(sizes.width, sizes.height);
+
+  // white target for the first render
+  const whiteTarget = new THREE.WebGLRenderTarget(sizes.width, sizes.height);
+
+
+
+  const fboScene = new THREE.Scene();
+  const fboCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+  const fboMaterial = new THREE.ShaderMaterial({
+    uniforms: {
+      tDiffuse: { value: null },
+      time: { value: 0 },
+      tPrev: { value: whiteTarget.texture },
+      resolution: { value: new THREE.Vector4(sizes.width, sizes.height, 1, 1) },
+    },
+    vertexShader,
+    fragmentShader: fboShader
+  });
+
+  const fboQuad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), fboMaterial);
+  fboScene.add(fboQuad);
+
+  //final render target to output texture
+  const finalScene = new THREE.Scene();
+  const finalQuad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2),
+    new THREE.MeshBasicMaterial({map: null})
+  );
+  finalScene.add(finalQuad);
+
+  /**
+   * Camera
+   */
+    // Base camera
+  const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 100)
+  camera.position.x = 0
+  camera.position.y = 0
+  camera.position.z = 2
+  scene.add(camera)
+
+  /**
+   * Renderer
+   */
+  const renderer = new THREE.WebGLRenderer({
+    canvas: canvas,
+    antialias: true,
+  })
+  renderer.setSize(sizes.width, sizes.height)
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+
+  window.addEventListener('mousemove', onPointerMove);
+
+  /**
+   * Animate
+   */
+  const clock = new THREE.Clock()
+
+  const tick = () =>
+  {
+    const elapsedTime = clock.getElapsedTime()
+
+
+    // Render the source
+    renderer.setRenderTarget(sourceTarget);
+    renderer.render(scene, camera)
+
+    renderer.setRenderTarget(whiteTarget);
+    renderer.render(whiteScene, camera);
+
+    // Ping pong
+    renderer.setRenderTarget(targetA);
+    renderer.render(fboScene, fboCamera);
+    fboMaterial.uniforms.tDiffuse.value = sourceTarget.texture;
+    fboMaterial.uniforms.tPrev.value = targetA.texture;
+    fboMaterial.uniforms.time.value = elapsedTime;
+
+    // final output
+    finalQuad.material.map = targetA.texture;
+    renderer.setRenderTarget(null);
+    renderer.render(finalScene, fboCamera);
+
+    // swap
+    const temp = targetA;
+    targetA = targetB;
+    targetB = temp;
+
+    // Call tick again on the next frame
+    window.requestAnimationFrame(tick)
+  }
+
+  tick()
+</script>
+</body>
+</html>

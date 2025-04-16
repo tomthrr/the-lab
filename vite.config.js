@@ -65,6 +65,7 @@ export default {
           UniBloc: resolve(__dirname, 'src/uni-bloc.html'),
           LygiaGrid: resolve(__dirname, 'src/lygia-grid.html'),
           Fluid: resolve(__dirname, 'src/fluid.html'),
+          WaterColor: resolve(__dirname, 'src/watercolor-effect.html'),
         }
       },
     },
