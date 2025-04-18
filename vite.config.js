@@ -67,6 +67,7 @@ export default {
           Fluid: resolve(__dirname, 'src/fluid.html'),
           WaterColor: resolve(__dirname, 'src/watercolor-effect.html'),
           PaintingEffect: resolve(__dirname, 'src/painting-image.html'),
+          AbductionOfEuropa: resolve(__dirname, 'src/abduction-of-europa.html'),
         }
       },
     },
