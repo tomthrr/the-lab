@@ -3,152 +3,244 @@
 <head>
   <meta charset="UTF-8" />
   <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
-  <meta
-      name="viewport"
-      content="width=device-width, minimal-ui, viewport-fit=cover, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no"
-  />
-
-  <title>ThreeJS - The Abduction of Europa</title>
-  <link href="assets/main.scss" rel="stylesheet" />
-  <link href="assets/adbucation-of-europa.scss" rel="stylesheet" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ThreeJS - Multiple Watercolor Planes</title>
+  <style>body { margin: 0; overflow: hidden; }</style>
 </head>
-<body class="container-project">
-<div class="container"></div>
+<body>
 <canvas class="webgl"></canvas>
 <script type="module">
-  import * as THREE from 'three'
-  import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-  import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js'
+    import * as THREE from 'three';
+    import vertexShader from './shaders/abduction-of-europa/vertex.glsl';
+    // import fragmentShader from './shaders/abduction-of-europa/fragment.glsl'; // Seems unused in the provided snippet logic? Verify if needed.
+    import fboShader from './shaders/abduction-of-europa/fbo.glsl';
+    import finalFragmentShader from './shaders/abduction-of-europa/image.glsl';
+    import {DRACOLoader} from "three/examples/jsm/loaders/DRACOLoader.js";
+    import {GLTFLoader} from "three/examples/jsm/loaders/GLTFLoader.js";
 
-  const canvas = document.querySelector('canvas.webgl');
+    const canvas = document.querySelector('canvas.webgl');
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+    const sizes = { width: window.innerWidth, height: window.innerHeight };
+    renderer.setSize(sizes.width, sizes.height);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
-  const scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x0f0f0f);
+    const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 100);
+    camera.position.z = 10;
 
-  let scrollY = window.scrollY;
+    const finalScene = new THREE.Scene();
 
-  // Draco Loader
-  const dracoLoader = new DRACOLoader()
-  dracoLoader.setDecoderPath('/algorithm/draco/')
+    // Scene for rendering initial white state to textures
+    const whiteScene = new THREE.Scene();
+    const whiteBg = new THREE.Mesh(
+            new THREE.PlaneGeometry(2, 2),
+            new THREE.MeshBasicMaterial({ color: 0xffffff })
+    );
+    whiteScene.add(whiteBg);
 
-  // GLTF Loader
-  const gltfLoader = new GLTFLoader()
+    const clock = new THREE.Clock();
+    const NUM_PLANES = 3;
+    const spacing = 6;
+    const planeSize = 5;
+    const planes = [];
+    const interactiveMeshes = [];
 
-  const sizes = {
-    width: window.innerWidth,
-    height: window.innerHeight
-  }
+    const raycaster = new THREE.Raycaster();
+    const pointer = new THREE.Vector2(-10, -10);
 
-  /*
-   *  Textures
-   */
-  let europaScene = null;
-  let mixer = null;
-  let camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 1000)
-  scene.add(camera)
 
-  gltfLoader.load('/textures/abduction-of-europa/abducation_of_europea.glb', (gltf) => {
-    europaScene = gltf.scene;
-    scene.add(europaScene);
+    // --- Create Multiple Plane Setups ---
+    for (let i = 0; i < NUM_PLANES; i++) {
+        // 1. Source Scene (for rendering the interaction dummy)
+        const sourceScene = new THREE.Scene();
+        const dummy = new THREE.Mesh(
+                new THREE.SphereGeometry(0.2, 16, 16),
+                new THREE.MeshBasicMaterial({ color: 0xff0000 })
+        );
+        dummy.name = 'interactionDummy';
+        dummy.position.set(10000, 10000, 10000); // Start off-screen
+        sourceScene.add(dummy);
 
-    const cameraBlender = gltf.scene.getObjectByName("Camera");
+        // 2. Render Targets for this plane
+        const renderTarget = new THREE.WebGLRenderTarget(sizes.width, sizes.height);
+        let trailTargetA = new THREE.WebGLRenderTarget(sizes.width, sizes.height);
+        let trailTargetB = new THREE.WebGLRenderTarget(sizes.width, sizes.height);
+        const whiteTarget = new THREE.WebGLRenderTarget(sizes.width, sizes.height);
 
-    if (cameraBlender && gltf.cameras.length > 0) {
-      camera = cameraBlender;
+        // 3. Orthographic Camera for rendering the sourceScene (FIX for offset)
+        const orthoSourceCamera = new THREE.OrthographicCamera(
+                -planeSize / 2, planeSize / 2, // left, right
+                planeSize / 2, -planeSize / 2, // top, bottom
+                0.1, 100 // near, far
+        );
+        orthoSourceCamera.position.set(0, 0, 1);
+        orthoSourceCamera.lookAt(0, 0, 0);
+
+        // 4. FBO Scene (for fluid simulation shader)
+        const fboScene = new THREE.Scene();
+        const fboCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+        const fboMaterial = new THREE.ShaderMaterial({
+            uniforms: {
+                tDiffuse: { value: null },
+                tPrev: { value: null },
+                time: { value: 0 },
+                resolution: { value: new THREE.Vector4(sizes.width, sizes.height, 1 / sizes.width, 1 / sizes.height) }, // Pass resolution and pixel size
+            },
+            vertexShader,
+            fragmentShader: fboShader
+        });
+        const fboQuad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), fboMaterial); // Quad fills FBO camera view
+        fboScene.add(fboQuad);
+
+        // 5. Final Visible Plane (Image + Reveal Effect)
+        const imageTexture = new THREE.TextureLoader().load(`/corgi.jpg`, (texture) => {
+            texture.needsUpdate = true;
+        });
+
+        const finalMaterial = new THREE.ShaderMaterial({
+            uniforms: {
+                tReveal: { value: null }, // Fluid/Trail texture (from trailTargetA/B)
+                tColor: { value: imageTexture }, // The image
+            },
+            vertexShader,
+            fragmentShader: finalFragmentShader,
+        });
+        const finalQuad = new THREE.Mesh(new THREE.PlaneGeometry(planeSize, planeSize), finalMaterial);
+        finalQuad.position.x = i * spacing - ((NUM_PLANES - 1) * spacing) / 2;
+        finalScene.add(finalQuad);
+
+        // 6. Store references for Raycasting and ticking
+        finalQuad.userData.planeIndex = i;
+        interactiveMeshes.push(finalQuad);
+
+        planes.push({
+            planeIndex: i,
+            sourceScene,
+            dummy,
+            orthoSourceCamera,
+            fboScene,
+            fboCamera,
+            fboMaterial,
+            finalMaterial,
+            trailTargetA,
+            trailTargetB,
+            whiteTarget,
+            renderTarget,
+            finalQuad
+        });
+    }
+    // --- End Setup Loop ---
+
+
+    // --- Initialize Render Targets State ---
+    const initCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1); // Simple camera for clearing
+    planes.forEach(plane => {
+        // Render white to the target used as the initial 'previous' state for the FBO
+        renderer.setRenderTarget(plane.trailTargetB);
+        renderer.render(whiteScene, initCamera);
+
+        renderer.setRenderTarget(plane.trailTargetA);
+        renderer.render(whiteScene, initCamera);
+        renderer.setRenderTarget(plane.whiteTarget);
+        renderer.render(whiteScene, initCamera);
+
+        plane.fboMaterial.uniforms.tPrev.value = plane.trailTargetB.texture;
+        plane.finalMaterial.uniforms.tReveal.value = plane.trailTargetA.texture; // Start revealing with A
+    });
+    renderer.setRenderTarget(null);
+
+    function onPointerMove( event ) {
+        pointer.x = ( event.clientX / window.innerWidth ) * 2 - 1;
+        pointer.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
+
+        raycaster.setFromCamera(pointer, camera);
+
+        const intersects = raycaster.intersectObjects(interactiveMeshes);
+
+        planes.forEach(plane => {
+            plane.dummy.position.set(10000, 10000, 10000);
+        });
+
+        if (intersects.length > 0) {
+            const intersection = intersects[0];
+            const intersectedObject = intersection.object;
+            const planeIndex = intersectedObject.userData.planeIndex;
+
+            if (planeIndex !== undefined) {
+                const targetPlane = planes[planeIndex];
+                const uv = intersection.uv;
+
+                targetPlane.dummy.position.x = (uv.x - 0.5) * planeSize;
+                targetPlane.dummy.position.y = (uv.y - 0.5) * planeSize;
+                targetPlane.dummy.position.z = 0;
+            }
+        }
+    }
+    window.addEventListener('pointermove', onPointerMove);
+
+    function tick() {
+        const elapsedTime = clock.getElapsedTime();
+
+        planes.forEach(plane => {
+            renderer.setRenderTarget(plane.renderTarget);
+            renderer.render(plane.sourceScene, plane.orthoSourceCamera);
+
+            plane.fboMaterial.uniforms.tDiffuse.value = plane.renderTarget.texture;
+            plane.fboMaterial.uniforms.tPrev.value = plane.trailTargetB.texture;
+            plane.fboMaterial.uniforms.time.value = elapsedTime;
+            renderer.setRenderTarget(plane.trailTargetA);
+            renderer.render(plane.fboScene, plane.fboCamera);
+
+            plane.finalMaterial.uniforms.tReveal.value = plane.trailTargetA.texture;
+
+            const temp = plane.trailTargetA;
+            plane.trailTargetA = plane.trailTargetB;
+            plane.trailTargetB = temp;
+        });
+
+        renderer.setRenderTarget(null);
+        renderer.render(finalScene, camera);
+
+        requestAnimationFrame(tick);
     }
 
-    if (gltf.animations && gltf.animations.length > 0) {
-      mixer = new THREE.AnimationMixer(gltf.scene);
+    window.addEventListener('resize', () => {
+        sizes.width = window.innerWidth;
+        sizes.height = window.innerHeight;
 
-      const clip = gltf.animations[0];
-      animationDuration = clip.duration;
+        camera.aspect = sizes.width / sizes.height;
+        camera.updateProjectionMatrix();
 
-      mixer.clipAction(clip).play();
-    }
-  });
+        renderer.setSize(sizes.width, sizes.height);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
+        const initCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+        planes.forEach(plane => {
+            plane.renderTarget.setSize(sizes.width, sizes.height);
+            plane.trailTargetA.setSize(sizes.width, sizes.height);
+            plane.trailTargetB.setSize(sizes.width, sizes.height);
+            plane.whiteTarget.setSize(sizes.width, sizes.height);
 
+            plane.fboMaterial.uniforms.resolution.value.x = sizes.width;
+            plane.fboMaterial.uniforms.resolution.value.y = sizes.height;
+            plane.fboMaterial.uniforms.resolution.value.z = 1 / sizes.width;
+            plane.fboMaterial.uniforms.resolution.value.w = 1 / sizes.height;
 
-  /**
-   * Lights
-   */
+            renderer.setRenderTarget(plane.trailTargetB);
+            renderer.render(whiteScene, initCamera);
+            renderer.setRenderTarget(plane.trailTargetA);
+            renderer.render(whiteScene, initCamera);
+            renderer.setRenderTarget(plane.whiteTarget);
+            renderer.render(whiteScene, initCamera);
 
-  const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
-  scene.add(ambientLight);
+            plane.fboMaterial.uniforms.tPrev.value = plane.trailTargetB.texture;
+            plane.finalMaterial.uniforms.tReveal.value = plane.trailTargetA.texture;
 
-  const directionalLight = new THREE.DirectionalLight(0xffffff, 4);
-  directionalLight.position.set(5, 5, 5);
-  scene.add(directionalLight);
+        });
+        renderer.setRenderTarget(null);
+    });
 
+    tick();
 
-  /**
-   * Sizes
-   */
-
-  window.addEventListener('resize', () => {
-    //updates sizes
-    sizes.width = window.innerWidth
-    sizes.height = window.innerHeight
-
-    camera.aspect = sizes.width / sizes.height
-    camera.updateProjectionMatrix()
-
-    // Update renderer
-    renderer.setSize(sizes.width, sizes.height)
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
-  })
-
-  /**
-   * Scrolling
-   */
-
-  let scrollPercent = 0;
-  let animationDuration = 0;
-
-  window.addEventListener('scroll', () => {
-    const scrollTop = window.scrollY || document.documentElement.scrollTop;
-    const scrollHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
-
-    scrollPercent = scrollTop / scrollHeight;
-
-    if (mixer && animationDuration) {
-      mixer.setTime(Math.min(scrollPercent * animationDuration, 4.154));
-    }
-  });
-
-
-  /**
-   * Renderer
-   */
-  const renderer = new THREE.WebGLRenderer({
-    canvas: canvas,
-  })
-  renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.setSize(sizes.width, sizes.height)
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
-
-  /**
-   * Animate
-   */
-  const clock = new THREE.Clock()
-
-  const tick = () => {
-    const elapsedTime = clock.getElapsedTime();
-    const deltaTime = clock.getDelta();
-
-    if(mixer) {
-      // mixer.update(elapsedTime * 0.001)
-    }
-
-    if (camera) {
-      renderer.render(scene, camera);
-    }
-
-    window.requestAnimationFrame(tick);
-  };
-
-
-  tick()
 </script>
 </body>
 </html>
