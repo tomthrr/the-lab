@@ -94,7 +94,7 @@
 
   // --- GLTF Loading ---
   gltfLoader.load(
-    './textures/abduction_of_europa/abducation_of_europea2.glb',
+    './textures/abduction_of_europa/abducation_of_europea2v2.glb',
     (gltf) => {
       console.log('GLTF loaded.');
       europaScene = gltf.scene;
@@ -263,7 +263,7 @@
 
     if (mixer && animationDuration > 0) {
       const targetTime = scrollPercent * animationDuration;
-      mixer.setTime(Math.min(targetTime, animationDuration)); // Apply time directly
+      mixer.setTime(Math.min(targetTime, animationDuration-0.1)); // Apply time directly
     }
   }
   window.addEventListener('scroll', updateAnimationTime);
