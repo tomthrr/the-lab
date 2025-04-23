@@ -104,11 +104,22 @@
       const cameraBlender = gltf.scene.getObjectByName("Camera");
       if (cameraBlender && cameraBlender.isCamera) {
         console.log('Using camera from GLTF file.');
-        scene.remove(camera);
+
+        const pivot = new THREE.Object3D();
+        pivot.name = "cameraPivot";
+        pivot.rotation.set(0, 0, 0);
+
+        cameraBlender.parent.add(pivot);
+        pivot.add(cameraBlender);
+
         camera = cameraBlender;
+        camera.userData.pivot = pivot;
+
         camera.aspect = sizes.width / sizes.height;
         camera.updateProjectionMatrix();
       }
+
+
 
       // --- Animation Handling ---
       if (gltf.animations && gltf.animations.length > 0) {
@@ -328,9 +339,22 @@
     }
   });
 
+  function motionMouseMovement() {
+    const delta = 0.05;
+    const degree = 230;
+    const pivot = camera.userData.pivot;
+
+    if (pivot) {
+      pivot.rotation.y = THREE.MathUtils.lerp(pivot.rotation.y, (-pointer.x * Math.PI) / degree, delta);
+      pivot.rotation.x = THREE.MathUtils.lerp(pivot.rotation.x, (pointer.y * Math.PI) / degree, delta);
+    }
+  }
+
   // --- Animation Loop ---
   const tick = () => {
     const elapsedTime = clock.getElapsedTime();
+
+    motionMouseMovement()
 
     effectSetups.forEach(setup => {
       // 1. Render Interaction Point
@@ -352,7 +376,6 @@
       setup.trailTargetA = setup.trailTargetB;
       setup.trailTargetB = temp;
     });
-
     // Render the main scene
     if (camera) {
       renderer.setRenderTarget(null);
