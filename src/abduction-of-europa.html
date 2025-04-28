@@ -71,10 +71,10 @@
   const effectSetups = [];
   const interactiveMeshes = [];
 
-  const planeSize = 5;
+  const planeSize = 6;
 
   // --- Mouse cursor Setup ---
-  const cursorColor = "rgba(0,0,0,0.21)";
+  const cursorColor = "rgb(0,0,0)";
   const cursorRaycastColor = "white";
 
   const ballGeometry = new THREE.SphereGeometry(0.002, 32, 32);
@@ -113,7 +113,7 @@
 
   // --- GLTF Loading ---
   gltfLoader.load(
-    './textures/abduction_of_europa/abducation_of_europea2v2.glb',
+    './textures/abduction_of_europa/abducation_of_europea3.glb',
     (gltf) => {
       console.log('GLTF loaded.');
       europaScene = gltf.scene;
@@ -168,13 +168,13 @@
 
       europaScene.traverse((node) => {
         console.log(node?.material?.name)
-        if (node.isMesh && node?.material?.name) {
+        if (node.isMesh && node.material.name) {
           const originalMaterial = node.material; // Store original for reference (e.g., texture)
           const originalTexture = originalMaterial.map || null; // Get original texture map
 
           const sourceScene = new THREE.Scene();
           const dummy = new THREE.Mesh(
-            new THREE.SphereGeometry(0.2, 16, 16),
+            new THREE.SphereGeometry(0.15, 16, 16),
             new THREE.MeshBasicMaterial({ color: 0xff0000 })
           );
           dummy.name = 'interactionDummy';
@@ -280,8 +280,6 @@
     renderer.setRenderTarget(null); // Reset to canvas
     console.log("Effect render targets initialized.");
   }
-
-  // --- Event Listeners ---
 
   // Scroll Listener
   function updateAnimationTime() {
@@ -417,7 +415,7 @@
   });
 
   function motionMouseMovement() {
-    const delta = 0.001;
+    const delta = 0.01;
     const degree = 230; // Controls the amount of camera rotation
     const pivot = camera.userData.pivot;
 
