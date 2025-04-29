@@ -107,12 +107,15 @@ void main()
     vec4 texel4 = texture2D(tPrev, vec2(vUv.x, vUv.y + disp.y));
     vec4 texel5 = texture2D(tPrev, vec2(vUv.x, vUv.y - disp.y));
     vec3 floodColor = texel.rgb;
+
+    // Create a displacement, water color effect
     floodColor = blendDarken(floodColor, texel2.rgb);
     floodColor = blendDarken(floodColor, texel3.rgb);
     floodColor = blendDarken(floodColor, texel4.rgb);
     floodColor = blendDarken(floodColor, texel5.rgb);
 
-    vec3 watercolor = blendDarken(prev.rgb, floodColor * (1.+0.02), 0.4);
+
+    vec3 watercolor = blendDarken(prev.rgb, floodColor * (1.+0.02), 0.4); // Watercolor Power
 
     vec3 gradientColor = hsl2rgb(0.5, 0.5, 0.5); // converting white ball to color
     vec3 lcolor = mix(vec3(1.), gradientColor, color.r);
@@ -124,6 +127,6 @@ void main()
     gl_FragColor = vec4(gradientColor.rgb,1.);
     gl_FragColor = vec4(finalColor.rgb,1.);
     gl_FragColor = vec4(
-            min(bgColor, finalColor * (1. + 0.01) + 0.0001),
+            min(bgColor, finalColor * (1. + 0.01) + 0.0001),  // (1. + trailSpeed) + trailDuration
     1.);
 }
