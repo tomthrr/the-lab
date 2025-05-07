@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+  <meta
+      name="viewport"
+      content="width=device-width, minimal-ui, viewport-fit=cover, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no"
+  />
+
+  <title>ThreeJS - Windows Background</title>
+  <link href="assets/main.scss" rel="stylesheet" />
+</head>
+<body class="container-project">
+<div class="container"></div>
+<canvas class="webgl"></canvas>
+<script type="module">
+  import * as THREE from 'three'
+  import {OrbitControls} from "three/examples/jsm/controls/OrbitControls.js";
+
+  const canvas = document.querySelector('canvas.webgl');
+
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x0f0f0f);
+
+  /*
+   *  Textures
+   */
+  const planeSize = 3;
+  const geometry = new THREE.PlaneGeometry(planeSize, planeSize);
+  const material = new THREE.MeshBasicMaterial( {color: 0xffffff, side: THREE.DoubleSide} );
+  const cube = new THREE.Mesh( geometry, material );
+  cube.rotation.x = Math.PI / 2
+  scene.add( cube );
+
+  // Chunk the plane to add grass
+  const subdivisions = 10;
+  const subdivisionSize = planeSize / subdivisions;
+  const subdividedPlane = new THREE.Group();
+
+  const subdivisionPlaneShift = 0.5 * subdivisions * subdivisionSize;
+  const subdivisionShift = 0.5 * subdivisionSize;
+
+  for(let y = 0; y < subdivisions; y++) {
+    for(let x = 0; x < subdivisions; x++) {
+      const grass = new THREE.Mesh(
+        new THREE.PlaneGeometry(0.1,0.1),
+        new THREE.MeshStandardMaterial({
+          color: Math.random() * 0x99999,
+        })
+      );
+
+      grass.position.set(
+        subdivisionShift + x * subdivisionSize - subdivisionPlaneShift,
+        0.05,
+        subdivisionShift + y * subdivisionSize - subdivisionPlaneShift
+      );
+
+      subdividedPlane.add(grass);
+    }
+  }
+  scene.add(subdividedPlane);
+
+  /**
+   * Lights
+   */
+  const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+  scene.add(ambientLight);
+
+  const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+  directionalLight.position.set(5, 5, 5);
+  scene.add(directionalLight);
+
+  /**
+   * Sizes
+   */
+  const sizes = {
+    width: window.innerWidth,
+    height: window.innerHeight
+  }
+
+  window.addEventListener('resize', () => {
+    //updates sizes
+    sizes.width = window.innerWidth
+    sizes.height = window.innerHeight
+
+    camera.aspect = sizes.width / sizes.height
+    camera.updateProjectionMatrix()
+
+    // Update renderer
+    renderer.setSize(sizes.width, sizes.height)
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+  })
+
+  /**
+   * Camera
+   */
+    // Base camera
+  const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 100)
+  camera.position.x = 0
+  camera.position.y = 2
+  camera.position.z = 2
+  scene.add(camera)
+
+  /**
+   * Renderer
+   */
+  const renderer = new THREE.WebGLRenderer({
+    canvas: canvas
+  })
+  renderer.setSize(sizes.width, sizes.height)
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+
+  const controls = new OrbitControls(camera, canvas)
+  controls.enableDamping = true
+
+  /**
+   * Animate
+   */
+  const clock = new THREE.Clock()
+
+  const tick = () =>
+  {
+    const elapsedTime = clock.getElapsedTime()
+
+    controls.update()
+
+    // Render
+    renderer.render(scene, camera)
+
+    // Call tick again on the next frame
+    window.requestAnimationFrame(tick)
+  }
+
+  tick()
+</script>
+</body>
+</html>

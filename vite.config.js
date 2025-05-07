@@ -68,6 +68,7 @@ export default {
           WaterColor: resolve(__dirname, 'src/watercolor-effect.html'),
           PaintingEffect: resolve(__dirname, 'src/painting-image.html'),
           AbductionOfEuropa: resolve(__dirname, 'src/abduction-of-europa.html'),
+          WindowsBg: resolve(__dirname, 'src/windows-bg.html'),
         }
       },
     },
