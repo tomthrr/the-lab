@@ -17,11 +17,22 @@
 <script type="module">
   import * as THREE from 'three'
   import {OrbitControls} from "three/examples/jsm/controls/OrbitControls.js";
+  import {DRACOLoader} from "three/examples/jsm/loaders/DRACOLoader.js";
+  import {GLTFLoader} from "three/examples/jsm/loaders/GLTFLoader.js";
+  import Stats from "three/addons/libs/stats.module.js";
 
   const canvas = document.querySelector('canvas.webgl');
 
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(0x0f0f0f);
+
+  // Loaders
+  const dracoLoader = new DRACOLoader();
+  dracoLoader.setDecoderPath('/examples/jsm/libs/draco/');
+  const gltfLoader = new GLTFLoader();
+  gltfLoader.setDRACOLoader(dracoLoader);
+
+
 
   /*
    *  Textures
@@ -34,32 +45,39 @@
   scene.add( cube );
 
   // Chunk the plane to add grass
-  const subdivisions = 10;
-  const subdivisionSize = planeSize / subdivisions;
-  const subdividedPlane = new THREE.Group();
+  // import grass model
+  let grassModel = null
+  gltfLoader.load(
+    './textures/windows_bg/grass_green.glb',
+    (gltf) => {
+      console.log(gltf)
+      grassModel = gltf.scene;
 
-  const subdivisionPlaneShift = 0.5 * subdivisions * subdivisionSize;
-  const subdivisionShift = 0.5 * subdivisionSize;
+      const subdivisions = 16;
+      const subdivisionSize = planeSize / subdivisions;
+      const subdividedPlane = new THREE.Group();
 
-  for(let y = 0; y < subdivisions; y++) {
-    for(let x = 0; x < subdivisions; x++) {
-      const grass = new THREE.Mesh(
-        new THREE.PlaneGeometry(0.1,0.1),
-        new THREE.MeshStandardMaterial({
-          color: Math.random() * 0x99999,
-        })
-      );
+      const subdivisionPlaneShift = 0.5 * subdivisions * subdivisionSize;
+      const subdivisionShift = 0.5 * subdivisionSize;
 
-      grass.position.set(
-        subdivisionShift + x * subdivisionSize - subdivisionPlaneShift,
-        0.05,
-        subdivisionShift + y * subdivisionSize - subdivisionPlaneShift
-      );
+      for(let y = 0; y < subdivisions; y++) {
+        for(let x = 0; x < subdivisions; x++) {
+          const grass = grassModel.clone();
 
-      subdividedPlane.add(grass);
+          grass.position.set(
+            subdivisionShift + x * subdivisionSize - subdivisionPlaneShift,
+            0.05,
+            subdivisionShift + y * subdivisionSize- subdivisionPlaneShift
+          );
+
+          grass.rotation.y = Math.random() * Math.PI;
+
+          subdividedPlane.add(grass);
+        }
+      }
+      scene.add(subdividedPlane);
     }
-  }
-  scene.add(subdividedPlane);
+  )
 
   /**
    * Lights
@@ -114,6 +132,10 @@
   const controls = new OrbitControls(camera, canvas)
   controls.enableDamping = true
 
+  const stats = new Stats();
+  stats.showPanel( 0 ); // 0: fps, 1: ms, 2: mb, 3+: custom
+  document.body.appendChild( stats.dom );
+
   /**
    * Animate
    */
@@ -122,11 +144,13 @@
   const tick = () =>
   {
     const elapsedTime = clock.getElapsedTime()
+    stats.begin();
 
     controls.update()
 
     // Render
     renderer.render(scene, camera)
+    stats.end();
 
     // Call tick again on the next frame
     window.requestAnimationFrame(tick)
