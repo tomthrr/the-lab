@@ -20,8 +20,13 @@
   import {DRACOLoader} from "three/examples/jsm/loaders/DRACOLoader.js";
   import {GLTFLoader} from "three/examples/jsm/loaders/GLTFLoader.js";
   import Stats from "three/addons/libs/stats.module.js";
+  import vertexShader from './shaders/windows_bg/vertex.glsl';
+  import fragmentShader from './shaders/windows_bg/fragment.glsl';
+  import GUI from "lil-gui";
 
   const canvas = document.querySelector('canvas.webgl');
+
+  const gui = new GUI();
 
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(0x0f0f0f);
@@ -44,16 +49,62 @@
   cube.rotation.x = Math.PI / 2
   scene.add( cube );
 
-  // Chunk the plane to add grass
-  // import grass model
   let grassModel = null
+  const options = {
+    windStrength: 0.006,
+    waveFrequency: 1,
+    waveSpeed: .5,
+
+    baseColor: "#0f3a0d",
+    depthColor: "#1f352a",
+    surfaceColor: "#9bd38d",
+  }
+  const grassMaterial = new THREE.ShaderMaterial({
+    vertexShader,
+    fragmentShader,
+    uniforms: {
+      uTime: {value: 0},
+      uWindStrength: {value: options.windStrength},
+      uWaveFrequency: {value: options.waveFrequency},
+      uWaveSpeed: {value: options.waveSpeed},
+      uBaseColor: {value: new THREE.Color(options.baseColor)},
+      uDepthColor: {value: new THREE.Color(options.depthColor)},
+      uSurfaceColor: {value: new THREE.Color(options.surfaceColor)},
+    },
+    side: THREE.DoubleSide
+  });
+
+  gui.add(options, 'windStrength', 0.001, 0.01).onChange(value => {
+    grassMaterial.uniforms.uWindStrength.value = value;
+  });
+
+  gui.add(options, 'waveFrequency', 0.1, 5).onChange(value => {
+    grassMaterial.uniforms.uWaveFrequency.value = value;
+  });
+  gui.add(options, 'waveSpeed', 0.01, 3).onChange(value => {
+    grassMaterial.uniforms.uWaveSpeed.value = value;
+  });
+
+
+  gui.addColor(options, 'baseColor').onChange(() => {
+    grassMaterial.uniforms.uBaseColor.value.set(options.baseColor)
+  });
+
+  gui.addColor(options, 'depthColor').onChange(() => {
+    grassMaterial.uniforms.uDepthColor.value.set(options.depthColor)
+  });
+
+  gui.addColor(options, 'surfaceColor').onChange(() => {
+    grassMaterial.uniforms.uSurfaceColor.value.set(options.surfaceColor)
+  });
+
   gltfLoader.load(
-    './textures/windows_bg/grass_green.glb',
+    './textures/windows_bg/grass.glb',
     (gltf) => {
       console.log(gltf)
       grassModel = gltf.scene;
 
-      const subdivisions = 16;
+      const subdivisions = 12;
       const subdivisionSize = planeSize / subdivisions;
       const subdividedPlane = new THREE.Group();
 
@@ -63,6 +114,11 @@
       for(let y = 0; y < subdivisions; y++) {
         for(let x = 0; x < subdivisions; x++) {
           const grass = grassModel.clone();
+          grass.traverse((child) => {
+            if (child.isMesh) {
+              child.material = grassMaterial
+            }
+          });
 
           grass.position.set(
             subdivisionShift + x * subdivisionSize - subdivisionPlaneShift,
@@ -71,6 +127,7 @@
           );
 
           grass.rotation.y = Math.random() * Math.PI;
+          grass.scale.set(Math.random() * 0.5 + 0.5, Math.random() * 0.5 + 0.5, Math.random() * 0.5 + 0.5);
 
           subdividedPlane.add(grass);
         }
@@ -145,6 +202,8 @@
   {
     const elapsedTime = clock.getElapsedTime()
     stats.begin();
+
+    grassMaterial.uniforms.uTime.value = elapsedTime;
 
     controls.update()
 
