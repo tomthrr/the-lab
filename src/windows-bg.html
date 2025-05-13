@@ -42,24 +42,45 @@
   /*
    *  Textures
    */
-  const planeSize = 3;
-  const geometry = new THREE.PlaneGeometry(planeSize, planeSize);
-  const material = new THREE.MeshBasicMaterial( {color: 0xffffff, side: THREE.DoubleSide} );
-  const cube = new THREE.Mesh( geometry, material );
-  cube.rotation.x = Math.PI / 2
-  scene.add( cube );
+  const INSTANCES = 10000;
+  const w = 10;
+  const d = 10;
+  const h = 0;
 
-  let grassModel = null
+  const planeGeometry = new THREE.PlaneGeometry(w, d, 2)
+  const planeMaterial = new THREE.MeshBasicMaterial({color: "#abebc6", side: THREE.DoubleSide, wireframe: true})
+
+  const planeMesh = new THREE.Mesh(
+    planeGeometry,
+    planeMaterial
+  );
+
+  scene.add(planeMesh);
+  planeMesh.rotation.x = Math.PI/2;
+  
+  /**
+   * Grass
+   */
+  const POSITIONS = []
+  const INDEXS = []
+  const UVS = []
+  const TERRPOSIS = []
+  const ANGLES = []
+
   const options = {
-    windStrength: 0.006,
-    waveFrequency: 1,
+    windStrength: .12,
+    waveFrequency: 1.2,
     waveSpeed: .5,
 
     baseColor: "#0f3a0d",
     depthColor: "#1f352a",
     surfaceColor: "#9bd38d",
   }
-  const grassMaterial = new THREE.ShaderMaterial({
+
+  const textureLoader = new THREE.TextureLoader()
+  const triangleMask = textureLoader.load('/textures/windows_bg/grass.jpg')
+
+  const grassMat = new THREE.ShaderMaterial({
     vertexShader,
     fragmentShader,
     uniforms: {
@@ -70,71 +91,61 @@
       uBaseColor: {value: new THREE.Color(options.baseColor)},
       uDepthColor: {value: new THREE.Color(options.depthColor)},
       uSurfaceColor: {value: new THREE.Color(options.surfaceColor)},
+      uMask: {value: triangleMask}
     },
     side: THREE.DoubleSide
   });
 
-  gui.add(options, 'windStrength', 0.001, 0.01).onChange(value => {
-    grassMaterial.uniforms.uWindStrength.value = value;
-  });
 
-  gui.add(options, 'waveFrequency', 0.1, 5).onChange(value => {
-    grassMaterial.uniforms.uWaveFrequency.value = value;
-  });
-  gui.add(options, 'waveSpeed', 0.01, 3).onChange(value => {
-    grassMaterial.uniforms.uWaveSpeed.value = value;
-  });
+  const axesHelper = new THREE.AxesHelper(1);
+  scene.add(axesHelper);
 
+  const createGrassParticles = () => {
+    POSITIONS.push( 0.5, -0.5, 0 );
+    POSITIONS.push( -0.5, -0.5, 0 );
+    POSITIONS.push( -0.5, 0.5, 0 );
+    POSITIONS.push( 0.5, 0.5, 0 );
 
-  gui.addColor(options, 'baseColor').onChange(() => {
-    grassMaterial.uniforms.uBaseColor.value.set(options.baseColor)
-  });
+    INDEXS.push(0);
+    INDEXS.push(1);
+    INDEXS.push(2);
+    INDEXS.push(2);
+    INDEXS.push(3);
+    INDEXS.push(0);
 
-  gui.addColor(options, 'depthColor').onChange(() => {
-    grassMaterial.uniforms.uDepthColor.value.set(options.depthColor)
-  });
+    UVS.push(1.0, 0.0);
+    UVS.push(0.0, 0.0);
+    UVS.push(0.0, 1.0);
+    UVS.push(1.0, 1.0);
 
-  gui.addColor(options, 'surfaceColor').onChange(() => {
-    grassMaterial.uniforms.uSurfaceColor.value.set(options.surfaceColor)
-  });
+    for (let i = 0; i < INSTANCES; i++) {
+      let posX = Math.random() * w - w/2;
+      let posY = h;
+      let posZ = Math.random() * d - d/2;
+      
+      TERRPOSIS.push(posX, posY, posZ);
 
-  gltfLoader.load(
-    './textures/windows_bg/grass.glb',
-    (gltf) => {
-      console.log(gltf)
-      grassModel = gltf.scene;
-
-      const subdivisions = 12;
-      const subdivisionSize = planeSize / subdivisions;
-      const subdividedPlane = new THREE.Group();
-
-      const subdivisionPlaneShift = 0.5 * subdivisions * subdivisionSize;
-      const subdivisionShift = 0.5 * subdivisionSize;
-
-      for(let y = 0; y < subdivisions; y++) {
-        for(let x = 0; x < subdivisions; x++) {
-          const grass = grassModel.clone();
-          grass.traverse((child) => {
-            if (child.isMesh) {
-              child.material = grassMaterial
-            }
-          });
-
-          grass.position.set(
-            subdivisionShift + x * subdivisionSize - subdivisionPlaneShift,
-            0.05,
-            subdivisionShift + y * subdivisionSize- subdivisionPlaneShift
-          );
-
-          grass.rotation.y = Math.random() * Math.PI;
-          grass.scale.set(Math.random() * 0.5 + 0.5, Math.random() * 0.5 + 0.5, Math.random() * 0.5 + 0.5);
-
-          subdividedPlane.add(grass);
-        }
-      }
-      scene.add(subdividedPlane);
+      let angle = Math.random()*360;
+      ANGLES.push(angle);
     }
-  )
+
+    const grassGeo = new THREE.InstancedBufferGeometry();
+    grassGeo.instanceCount = INSTANCES;
+
+    grassGeo.setAttribute( 'position', new THREE.Float32BufferAttribute( POSITIONS, 3 ) );
+    grassGeo.setAttribute( 'uv', new THREE.Float32BufferAttribute( UVS, 2 ) );
+    grassGeo.setIndex(new THREE.BufferAttribute(new Uint16Array( INDEXS ), 1));
+
+    grassGeo.setAttribute( 'terrPosi', new THREE.InstancedBufferAttribute( new Float32Array( TERRPOSIS ), 3 ) );
+    grassGeo.setAttribute( 'angle', new THREE.InstancedBufferAttribute(  new Float32Array( ANGLES ), 1 ).setUsage( THREE.DynamicDrawUsage ) );
+
+    const grassParticles = new THREE.Mesh( grassGeo, grassMat );
+    grassParticles.frustumCulled = false;
+    scene.add(grassParticles)
+  }
+
+  createGrassParticles()
+  
 
   /**
    * Lights
@@ -174,7 +185,7 @@
   const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 100)
   camera.position.x = 0
   camera.position.y = 2
-  camera.position.z = 2
+  camera.position.z = 10
   scene.add(camera)
 
   /**
@@ -203,8 +214,7 @@
     const elapsedTime = clock.getElapsedTime()
     stats.begin();
 
-    grassMaterial.uniforms.uTime.value = elapsedTime;
-
+    grassMat.uniforms.uTime.value = elapsedTime;
     controls.update()
 
     // Render

@@ -4,6 +4,7 @@ uniform float uTime;
 uniform vec3 uBaseColor;
 uniform vec3 uDepthColor;
 uniform vec3 uSurfaceColor;
+uniform sampler2D uMask;
 
 varying vec2 vUv;
 varying vec3 vWorldPosition;
@@ -26,5 +27,11 @@ void main()
     float heightFactor = smoothstep(0., 0.2, position.y); // 0 = base, 1 = sommet
     vec3 finalColor = mix(uBaseColor, noisyColor, heightFactor);
 
+    vec3 maskColor = texture2D( uMask, vUv ).rgb;
+
     gl_FragColor = vec4(finalColor, 1.0);
+
+    if( maskColor.r <= 0.1 ){
+        discard;
+    }
 }
