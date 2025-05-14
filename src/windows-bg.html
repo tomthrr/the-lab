@@ -16,7 +16,6 @@
 <canvas class="webgl"></canvas>
 <script type="module">
   import * as THREE from 'three'
-  import {OrbitControls} from "three/examples/jsm/controls/OrbitControls.js";
   import {DRACOLoader} from "three/examples/jsm/loaders/DRACOLoader.js";
   import {GLTFLoader} from "three/examples/jsm/loaders/GLTFLoader.js";
   import Stats from "three/addons/libs/stats.module.js";
@@ -25,9 +24,7 @@
   
   import vertexShader from './shaders/windows_bg/vertex.glsl';
   import fragmentShader from './shaders/windows_bg/fragment.glsl';
-  import cloudsVertexShader from './shaders/windows_bg/clouds/vertex.glsl'
-  import cloudsFragmentShader from './shaders/windows_bg/clouds/fragment.glsl'
-  
+
 
   const canvas = document.querySelector('canvas.webgl');
 
