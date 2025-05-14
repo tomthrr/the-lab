@@ -20,74 +20,157 @@
   import {DRACOLoader} from "three/examples/jsm/loaders/DRACOLoader.js";
   import {GLTFLoader} from "three/examples/jsm/loaders/GLTFLoader.js";
   import Stats from "three/addons/libs/stats.module.js";
+  import GUI from "lil-gui";
+  import { MeshSurfaceSampler } from 'three/addons/math/MeshSurfaceSampler.js';
+  
   import vertexShader from './shaders/windows_bg/vertex.glsl';
   import fragmentShader from './shaders/windows_bg/fragment.glsl';
-  import GUI from "lil-gui";
+  import cloudsVertexShader from './shaders/windows_bg/clouds/vertex.glsl'
+  import cloudsFragmentShader from './shaders/windows_bg/clouds/fragment.glsl'
+  
 
   const canvas = document.querySelector('canvas.webgl');
 
   const gui = new GUI();
 
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x0f0f0f);
+  scene.background = new THREE.Color("#60B5FF");
+
+  const sizes = {
+    width: window.innerWidth,
+    height: window.innerHeight
+  }
 
   // Loaders
   const dracoLoader = new DRACOLoader();
-  dracoLoader.setDecoderPath('/examples/jsm/libs/draco/');
+  dracoLoader.setDecoderPath('/examples/jsm/libs/draco/'); // Ensure this path is correct
   const gltfLoader = new GLTFLoader();
   gltfLoader.setDRACOLoader(dracoLoader);
-
-
-
-  /*
-   *  Textures
-   */
-  const INSTANCES = 10000;
-  const w = 10;
-  const d = 10;
-  const h = 0;
-
-  const planeGeometry = new THREE.PlaneGeometry(w, d, 2)
-  const planeMaterial = new THREE.MeshBasicMaterial({color: "#abebc6", side: THREE.DoubleSide, wireframe: true})
-
-  const planeMesh = new THREE.Mesh(
-    planeGeometry,
-    planeMaterial
-  );
-
-  scene.add(planeMesh);
-  planeMesh.rotation.x = Math.PI/2;
   
   /**
-   * Grass
-   */
-  const POSITIONS = []
-  const INDEXS = []
-  const UVS = []
-  const TERRPOSIS = []
-  const ANGLES = []
+  * Ground (Hill Model)
+  */
+  const INSTANCES = 300000; 
+
+  gltfLoader.load(
+    ("./textures/windows_bg/hill_windows.glb"), 
+    (glb) => {
+      const loadedObject = glb.scene.getObjectByName("Plane");
+      const blenderCamera = glb.scene.getObjectByName("Camera");
+
+      if (!loadedObject) {
+        console.error("GLB File not find.");
+        return;
+      }
+
+      if (blenderCamera) {
+        const cube = new THREE.Mesh(
+          new THREE.BoxGeometry(0.01,0.01,0.01),
+          new THREE.MeshBasicMaterial({ color: "#ff0000" })
+        );
+        scene.add(cube);
+
+        cube.position.copy(blenderCamera.position);
+        cube.position.z -= 200;
+        cube.position.y += 4;
+
+        camera.position.copy(blenderCamera.position);
+        camera.position.y += 4;
+
+        camera.lookAt(cube.position);
+
+        camera.aspect = sizes.width / sizes.height;
+        camera.updateProjectionMatrix();
+      }
+
+      
+      console.log(loadedObject.scale)
+      
+      // SET SCALE TO 1 IF NEEDED (DIFF BETWEEN BLENDER AND THREEJS)
+      // if (
+      //   loadedObject.scale.x !== 1 ||
+      //   loadedObject.scale.y !== 1 ||
+      //   loadedObject.scale.z !== 1
+      // ) {
+      //   loadedObject.scale.set(1,1,1);
+      // }
+
+      scene.add(loadedObject);
+
+      let meshToSample = null;
+      if (loadedObject.isMesh) {
+        meshToSample = loadedObject;
+      } else {
+        loadedObject.traverse(child => {
+          if (child.isMesh && !meshToSample) { 
+            meshToSample = child;
+          }
+        });
+      }
+
+      
+      meshToSample.material.side = THREE.DoubleSide;
+
+      scene.updateMatrixWorld(true);
+
+      console.log("Mesh to sample for grass:", meshToSample);
+      createGrassOnMesh(meshToSample, INSTANCES); 
+    }
+  );
+
+  /**
+  * Grass
+  */
+  const POSITIONS = []; // Vertex positions for one blade
+  const INDEXS = [];    // Indices for one blade
+  const UVS = [];       // UVs for one blade
+
+  POSITIONS.push( 0.5, -0.5, 0 ); // Bottom-right
+  POSITIONS.push( -0.5, -0.5, 0 ); // Bottom-left
+  POSITIONS.push( -0.5, 0.5, 0 );  // Top-left
+  POSITIONS.push( 0.5, 0.5, 0 );   // Top-right
+
+  INDEXS.push(0, 1, 2); // First triangle
+  INDEXS.push(2, 3, 0); // Second triangle
+
+  UVS.push(1.0, 0.0); // Corresponds to POSITIONS[0]
+  UVS.push(0.0, 0.0); // Corresponds to POSITIONS[1]
+  UVS.push(0.0, 1.0); // Corresponds to POSITIONS[2]
+  UVS.push(1.0, 1.0); // Corresponds to POSITIONS[3]
+
 
   const options = {
     windStrength: .12,
-    waveFrequency: 1.2,
+    waveFrequency: 3,
     waveSpeed: .5,
-
+    
     baseColor: "#0f3a0d",
     depthColor: "#1f352a",
     surfaceColor: "#9bd38d",
-  }
+    
+    noiseScale: 3.5,
+    noiseSpeed: 0.05,
+    noiseStrength: .13,
+    noiseContrast: 0.8,
+  };
 
-  const textureLoader = new THREE.TextureLoader()
-  const triangleMask = textureLoader.load('/textures/windows_bg/grass.jpg')
+  const textureLoader = new THREE.TextureLoader();
+  const triangleMask = textureLoader.load('/textures/windows_bg/grass.jpg'); // Ensure path is correct
 
   const grassMat = new THREE.ShaderMaterial({
-    vertexShader,
+    vertexShader,  
     fragmentShader,
     uniforms: {
       uTime: {value: 0},
       uWindStrength: {value: options.windStrength},
       uWaveFrequency: {value: options.waveFrequency},
       uWaveSpeed: {value: options.waveSpeed},
+
+      uNoiseScale: {value: options.noiseScale},
+      uNoiseSpeed: {value: options.noiseSpeed},
+      uNoiseStrength: {value: options.noiseStrength},
+      uNoiseContrast: {value: options.noiseContrast},
+
       uBaseColor: {value: new THREE.Color(options.baseColor)},
       uDepthColor: {value: new THREE.Color(options.depthColor)},
       uSurfaceColor: {value: new THREE.Color(options.surfaceColor)},
@@ -96,56 +179,86 @@
     side: THREE.DoubleSide
   });
 
+  gui.add(options, 'windStrength', 0.001, 0.01).onChange(value => {
+    grassMat.uniforms.uWindStrength.value = value;
+  });
 
-  const axesHelper = new THREE.AxesHelper(1);
+  gui.add(options, 'waveFrequency', 0.1, 5).onChange(value => {
+    grassMat.uniforms.uWaveFrequency.value = value;
+  });
+  gui.add(options, 'waveSpeed', 0.01, 3).onChange(value => {
+    grassMat.uniforms.uWaveSpeed.value = value;
+  });
+
+
+  gui.add(options, 'noiseScale', 0.001, 10).onChange(value => {
+    grassMat.uniforms.uNoiseScale.value = value;
+  });
+  gui.add(options, 'noiseSpeed', 0.1, 5).onChange(value => {
+    grassMat.uniforms.uNoiseSpeed.value = value;
+  });
+  gui.add(options, 'noiseStrength', 0.01, 3).onChange(value => {
+    grassMat.uniforms.uNoiseStrength.value = value;
+  });
+  gui.add(options, 'noiseContrast', 0.01, 3).onChange(value => {
+    grassMat.uniforms.uNoiseContrast.value = value;
+  });
+
+
+  gui.addColor(options, 'baseColor').onChange(() => {
+    grassMat.uniforms.uBaseColor.value.set(options.baseColor)
+  });
+
+  gui.addColor(options, 'depthColor').onChange(() => {
+    grassMat.uniforms.uDepthColor.value.set(options.depthColor)
+  });
+
+  gui.addColor(options, 'surfaceColor').onChange(() => {
+    grassMat.uniforms.uSurfaceColor.value.set(options.surfaceColor)
+  });
+
+  const axesHelper = new THREE.AxesHelper(1); // You can keep or remove this
   scene.add(axesHelper);
 
-  const createGrassParticles = () => {
-    POSITIONS.push( 0.5, -0.5, 0 );
-    POSITIONS.push( -0.5, -0.5, 0 );
-    POSITIONS.push( -0.5, 0.5, 0 );
-    POSITIONS.push( 0.5, 0.5, 0 );
+  const createGrassOnMesh = (targetMesh, numberOfInstances) => {
+    if (!targetMesh || !targetMesh.geometry) {
+      console.error("Cannot create grass: Target mesh is invalid or has no geometry.", targetMesh);
+      return;
+    }
 
-    INDEXS.push(0);
-    INDEXS.push(1);
-    INDEXS.push(2);
-    INDEXS.push(2);
-    INDEXS.push(3);
-    INDEXS.push(0);
+    const instanceTerrPosis = []; // Positions for each grass instance on the terrain
+    const instanceAngles = [];    // Random rotation for each grass instance
 
-    UVS.push(1.0, 0.0);
-    UVS.push(0.0, 0.0);
-    UVS.push(0.0, 1.0);
-    UVS.push(1.0, 1.0);
+    const sampler = new MeshSurfaceSampler(targetMesh).build();
+    const _position = new THREE.Vector3(); 
 
-    for (let i = 0; i < INSTANCES; i++) {
-      let posX = Math.random() * w - w/2;
-      let posY = h;
-      let posZ = Math.random() * d - d/2;
-      
-      TERRPOSIS.push(posX, posY, posZ);
+    for (let i = 0; i < numberOfInstances; i++) {
+      sampler.sample(_position);
 
-      let angle = Math.random()*360;
-      ANGLES.push(angle);
+      instanceTerrPosis.push(_position.x * targetMesh.scale.x, _position.y * targetMesh.scale.y, _position.z * targetMesh.scale.z);
+
+      let angle = Math.random() * Math.PI * 2;
+      instanceAngles.push(angle);
     }
 
     const grassGeo = new THREE.InstancedBufferGeometry();
-    grassGeo.instanceCount = INSTANCES;
+    grassGeo.instanceCount = numberOfInstances;
 
-    grassGeo.setAttribute( 'position', new THREE.Float32BufferAttribute( POSITIONS, 3 ) );
-    grassGeo.setAttribute( 'uv', new THREE.Float32BufferAttribute( UVS, 2 ) );
-    grassGeo.setIndex(new THREE.BufferAttribute(new Uint16Array( INDEXS ), 1));
+    // Attributes for a single blade of grass (using the global POSITIONS, UVS, INDEXS)
+    grassGeo.setAttribute('position', new THREE.Float32BufferAttribute(POSITIONS, 3));
+    grassGeo.setAttribute('uv', new THREE.Float32BufferAttribute(UVS, 2));
+    grassGeo.setIndex(new THREE.BufferAttribute(new Uint16Array(INDEXS), 1));
 
-    grassGeo.setAttribute( 'terrPosi', new THREE.InstancedBufferAttribute( new Float32Array( TERRPOSIS ), 3 ) );
-    grassGeo.setAttribute( 'angle', new THREE.InstancedBufferAttribute(  new Float32Array( ANGLES ), 1 ).setUsage( THREE.DynamicDrawUsage ) );
+    // Per-instance attributes
+    grassGeo.setAttribute('terrPosi', new THREE.InstancedBufferAttribute(new Float32Array(instanceTerrPosis), 3));
+    grassGeo.setAttribute('angle', new THREE.InstancedBufferAttribute(new Float32Array(instanceAngles), 1).setUsage(THREE.DynamicDrawUsage));
 
-    const grassParticles = new THREE.Mesh( grassGeo, grassMat );
-    grassParticles.frustumCulled = false;
-    scene.add(grassParticles)
-  }
+    const grassParticles = new THREE.Mesh(grassGeo, grassMat);
+    grassParticles.frustumCulled = false; // Good for effects like grass
+    scene.add(grassParticles);
 
-  createGrassParticles()
-  
+    console.log(`${numberOfInstances} grass instances added to the scene for`, targetMesh.name || 'target mesh');
+  };
 
   /**
    * Lights
@@ -160,10 +273,6 @@
   /**
    * Sizes
    */
-  const sizes = {
-    width: window.innerWidth,
-    height: window.innerHeight
-  }
 
   window.addEventListener('resize', () => {
     //updates sizes
@@ -182,10 +291,7 @@
    * Camera
    */
     // Base camera
-  const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 100)
-  camera.position.x = 0
-  camera.position.y = 2
-  camera.position.z = 10
+  let camera = new THREE.PerspectiveCamera(50, sizes.width / sizes.height, 0.1, 100)
   scene.add(camera)
 
   /**
@@ -197,8 +303,8 @@
   renderer.setSize(sizes.width, sizes.height)
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
 
-  const controls = new OrbitControls(camera, canvas)
-  controls.enableDamping = true
+  // const controls = new OrbitControls(camera, canvas)
+  // controls.enableDamping = true
 
   const stats = new Stats();
   stats.showPanel( 0 ); // 0: fps, 1: ms, 2: mb, 3+: custom
@@ -215,7 +321,7 @@
     stats.begin();
 
     grassMat.uniforms.uTime.value = elapsedTime;
-    controls.update()
+    // controls.update()
 
     // Render
     renderer.render(scene, camera)
