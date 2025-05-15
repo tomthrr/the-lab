@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+  <meta
+      name="viewport"
+      content="width=device-width, minimal-ui, viewport-fit=cover, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no"
+  />
+
+  <title>ThreeJS - Iframe in threejs</title>
+  <link href="assets/main.scss" rel="stylesheet" />
+</head>
+<body class="container-project">
+<div class="container"></div>
+<div id="blocker"></div>
+<canvas class="webgl"></canvas>
+<script type="module">
+  import * as THREE from 'three'
+  import {TrackballControls} from "three/addons";
+  import { CSS3DRenderer, CSS3DObject } from 'three/examples/jsm/renderers/CSS3DRenderer.js';
+
+
+  const canvas = document.querySelector('canvas.webgl');
+
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0xffffff);
+
+  /*
+   *  Textures
+   */
+  function Element( id, x, y, z, ry ) {
+
+    const div = document.createElement( 'div' );
+    div.style.width = '480px';
+    div.style.height = '360px';
+    div.style.backgroundColor = '#000';
+
+    const iframe = document.createElement( 'iframe' );
+    iframe.style.width = '480px';
+    iframe.style.height = '360px';
+    iframe.style.border = '0px';
+    iframe.src = [ 'https://www.youtube.com/embed/', id, '?rel=0' ].join( '' );
+    div.appendChild( iframe );
+
+    const object = new CSS3DObject( div );
+    object.position.set( x, y, z );
+    object.rotation.y = ry;
+
+    return object;
+
+  }
+
+  /**
+   * Lights
+   */
+  const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+  scene.add(ambientLight);
+
+  const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+  directionalLight.position.set(5, 5, 5);
+  scene.add(directionalLight);
+
+  /**
+   * Sizes
+   */
+  const sizes = {
+    width: window.innerWidth,
+    height: window.innerHeight
+  }
+
+  window.addEventListener('resize', () => {
+    //updates sizes
+    sizes.width = window.innerWidth
+    sizes.height = window.innerHeight
+
+    camera.aspect = sizes.width / sizes.height
+    camera.updateProjectionMatrix()
+
+    // Update renderer
+    renderer.setSize(sizes.width, sizes.height)
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+  })
+
+  /**
+   * Camera
+   */
+    // Base camera
+  const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 100)
+  camera.position.x = 0
+  camera.position.y = 0
+  camera.position.z = 2
+  scene.add(camera)
+
+
+
+  /**
+   * Renderer
+   */
+  const renderer = new THREE.WebGLRenderer({
+    canvas: canvas
+  })
+  renderer.setSize(sizes.width, sizes.height)
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+
+  /*****
+   * CSS3D Renderer
+   */
+  const cssRenderer = new CSS3DRenderer();
+  cssRenderer.setSize(sizes.width, sizes.height);
+  cssRenderer.domElement.style.position = 'absolute';
+  cssRenderer.domElement.style.top = 0;
+  document.body.appendChild(cssRenderer.domElement);
+
+
+  let controls = null;
+  controls = new TrackballControls( camera, cssRenderer.domElement );
+
+  controls.rotateSpeed = 4;
+
+  const group = new THREE.Group();
+  group.add( new Element( 'jkaMiaRLgvY', 0, 0, 240, 0 ) );
+  group.add( new Element( 'fVUD2pvytQ4', 240, 0, 0, Math.PI / 2 ) );
+  group.add( new Element( 'jLYsIESNtUc', 0, 0, - 240, Math.PI ) );
+  group.add( new Element( 'rrk4XzvIvfg', - 240, 0, 0, - Math.PI / 2 ) );
+  scene.add( group );
+
+  const blocker = document.getElementById( 'blocker' );
+  blocker.style.display = 'none';
+
+  controls.addEventListener( 'start', function () {
+
+    blocker.style.display = '';
+
+  } );
+  controls.addEventListener( 'end', function () {
+
+    blocker.style.display = 'none';
+
+  } );
+
+  /**
+   * Animate
+   */
+  const clock = new THREE.Clock()
+
+  const tick = () => {
+    const elapsedTime = clock.getElapsedTime();
+
+    controls.update(); // important si tu veux les rotations
+
+    renderer.render(scene, camera);     // WebGL (3D objets)
+    cssRenderer.render(scene, camera);  // CSS (iframe etc.)
+
+    window.requestAnimationFrame(tick);
+  }
+
+
+  tick()
+</script>
+</body>
+</html>
