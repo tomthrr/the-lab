@@ -280,9 +280,11 @@
   for (let i = 0; i < Clouds_Instances; i++) {
     const cloud = new Cloud({
       texture: cloudTexture,
-      speed: 0.18,
-      size: 0.5 + Math.random() * 0.5, // Random size between 0.5 and 1
-      color: new THREE.Color("#aeb2c1") // Optional: set color
+      speed: 0.08,
+      segments: 5 * Math.random() + 1,
+      growth: 5 + Math.random() * 5,
+      volume: 5 + Math.random() * 5,
+      color: new THREE.Color("#9a9ba1") // Optional: set color
     })
 
     // Random position behind the hill
@@ -297,9 +299,6 @@
 
     clouds.add(cloud)
   }
-
-
-
 
   /**
    * Lights
@@ -349,7 +348,7 @@
   const pmremGenerator = new THREE.PMREMGenerator( renderer );
 
   const rgbeLoader = new RGBELoader()
-  rgbeLoader.load('/textures/windows_bg/rustig_koppie_puresky_2k.hdr', (environmentMap) =>
+  rgbeLoader.load('/textures/windows_bg/rustig_koppie_puresky_1k.hdr', (environmentMap) =>
   {
     environmentMap.mapping = THREE.EquirectangularReflectionMapping
 
