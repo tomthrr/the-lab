@@ -80,6 +80,16 @@
         camera.position.copy(blenderCamera.position);
         camera.position.y += 1;
 
+        // Add pivot
+        const pivot = new THREE.Object3D();
+        pivot.name = "cameraPivot";
+        pivot.rotation.set(0, 0, 0);
+
+        pivot.add(camera);
+        scene.add(pivot);
+        camera.userData.pivot = pivot;
+
+
         camera.lookAt(cube.position);
         camera.updateProjectionMatrix();
         camera.aspect = sizes.width / sizes.height;
@@ -151,7 +161,7 @@
     depthColor: "#1f352a",
     surfaceColor: "#9bd38d",
     
-    noiseScale: 3.5,
+    noiseScale: 4,
     noiseSpeed: 0.05,
     noiseStrength: .13,
     noiseContrast: 0.8,
@@ -356,6 +366,30 @@
     scene.environment = environmentMap
   })
 
+  const pointer = new THREE.Vector2();
+
+  function onPointerMove( event ) {
+    pointer.x = (event.clientX / sizes.width) * 2 - 1;
+    pointer.y = -(event.clientY / sizes.height) * 2 + 1;
+  }
+
+  window.addEventListener('pointermove', onPointerMove);
+  const cameraGroup = new THREE.Group();
+  cameraGroup.add(camera);
+  scene.add(cameraGroup);
+
+  function motionMouseMovement() {
+    const delta = 0.05;
+    const degree = 230; // Controls the amount of camera rotation
+    const pivot = camera.userData.pivot;
+
+    if (pivot) {
+      pivot.rotation.y = THREE.MathUtils.lerp(pivot.rotation.y, (-pointer.x * Math.PI) / degree, delta);
+      pivot.rotation.x = THREE.MathUtils.lerp(pivot.rotation.x, (pointer.y * Math.PI) / degree, delta);
+    }
+  }
+
+
   /**
    * Animate
    */
@@ -369,6 +403,9 @@
 
     grassMat.uniforms.uTime.value = elapsedTime;
 
+    if (camera) {
+      motionMouseMovement();
+    }
     clouds.update(camera, elapsedTime, delta)
 
     renderer.render(scene, camera)
