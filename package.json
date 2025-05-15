@@ -13,6 +13,7 @@
     "vite-plugin-glsl": "^1.2.1"
   },
   "dependencies": {
+    "@pmndrs/vanilla": "^1.20.4",
     "cannon-es": "^0.20.0",
     "gsap": "^3.12.5",
     "lenis": "^1.1.6",

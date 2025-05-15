@@ -16,7 +16,7 @@ varying vec2 vUv;
 vec4 quat_from_axis_angle(vec3 axis, float angle)
 { 
   vec4 qr;
-  float half_angle = (angle * 0.5) * 3.14159 / 180.0;
+  float half_angle = angle * 0.5; // PAS de conversion ici
   qr.x = axis.x * sin(half_angle);
   qr.y = axis.y * sin(half_angle);
   qr.z = axis.z * sin(half_angle);

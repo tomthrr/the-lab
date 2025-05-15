@@ -21,9 +21,12 @@
   import Stats from "three/addons/libs/stats.module.js";
   import GUI from "lil-gui";
   import { MeshSurfaceSampler } from 'three/addons/math/MeshSurfaceSampler.js';
-  
+  import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
+
   import vertexShader from './shaders/windows_bg/vertex.glsl';
   import fragmentShader from './shaders/windows_bg/fragment.glsl';
+  import {Cloud, Clouds} from "@pmndrs/vanilla";
+  import {OrbitControls} from "three/examples/jsm/controls/OrbitControls.js";
 
 
   const canvas = document.querySelector('canvas.webgl');
@@ -38,12 +41,15 @@
     height: window.innerHeight
   }
 
+  let camera = new THREE.PerspectiveCamera(50, sizes.width / sizes.height, 0.1, 10000)
+  scene.add(camera)
+
   // Loaders
   const dracoLoader = new DRACOLoader();
   dracoLoader.setDecoderPath('/examples/jsm/libs/draco/'); // Ensure this path is correct
   const gltfLoader = new GLTFLoader();
   gltfLoader.setDRACOLoader(dracoLoader);
-  
+
   /**
   * Ground (Hill Model)
   */
@@ -62,22 +68,22 @@
 
       if (blenderCamera) {
         const cube = new THREE.Mesh(
-          new THREE.BoxGeometry(0.01,0.01,0.01),
+          new THREE.BoxGeometry(0.01, 0.01, 0.01),
           new THREE.MeshBasicMaterial({ color: "#ff0000" })
         );
         scene.add(cube);
 
         cube.position.copy(blenderCamera.position);
         cube.position.z -= 200;
-        cube.position.y += 4;
+        cube.position.y += 25;
 
         camera.position.copy(blenderCamera.position);
-        camera.position.y += 4;
+        camera.position.y += 1;
 
         camera.lookAt(cube.position);
-
-        camera.aspect = sizes.width / sizes.height;
         camera.updateProjectionMatrix();
+        camera.aspect = sizes.width / sizes.height;
+        camera.lookAt(cube.position);
       }
 
       
@@ -257,10 +263,48 @@
     console.log(`${numberOfInstances} grass instances added to the scene for`, targetMesh.name || 'target mesh');
   };
 
+
+  /**
+   * Clouds
+   */
+  const cloudTexture = textureLoader.load('textures/windows_bg/cloud.png')
+
+  // Groupe principal de nuages
+  const clouds = new Clouds({ texture: cloudTexture })
+  scene.add(clouds)
+
+  const Clouds_Instances = 20
+
+  // Zone de spawn des nuages
+
+  for (let i = 0; i < Clouds_Instances; i++) {
+    const cloud = new Cloud({
+      texture: cloudTexture,
+      speed: 0.18,
+      size: 0.5 + Math.random() * 0.5, // Random size between 0.5 and 1
+      color: new THREE.Color("#aeb2c1") // Optional: set color
+    })
+
+    // Random position behind the hill
+    const x = (Math.random() - 0.5) * 100 // Spread horizontally
+    const y = 20 + Math.random() * 10     // Higher in the sky
+    const z = -30 - Math.random() * 50    // Behind the hill
+
+    cloud.userData.speed = 0.1 + Math.random() * 15
+    cloud.userData.rotationSpeed = Math.random() * 0.5 // reduced spin too
+
+    cloud.position.set(x, y, z)
+
+    clouds.add(cloud)
+  }
+
+
+
+
   /**
    * Lights
    */
-  const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+  const ambientLight = new THREE.AmbientLight(0xffffff, 5);
   scene.add(ambientLight);
 
   const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
@@ -284,12 +328,6 @@
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
   })
 
-  /**
-   * Camera
-   */
-    // Base camera
-  let camera = new THREE.PerspectiveCamera(50, sizes.width / sizes.height, 0.1, 100)
-  scene.add(camera)
 
   /**
    * Renderer
@@ -300,33 +338,46 @@
   renderer.setSize(sizes.width, sizes.height)
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
 
-  // const controls = new OrbitControls(camera, canvas)
-  // controls.enableDamping = true
 
   const stats = new Stats();
   stats.showPanel( 0 ); // 0: fps, 1: ms, 2: mb, 3+: custom
   document.body.appendChild( stats.dom );
 
   /**
+   * HDRI
+   */
+  const pmremGenerator = new THREE.PMREMGenerator( renderer );
+
+  const rgbeLoader = new RGBELoader()
+  rgbeLoader.load('/textures/windows_bg/rustig_koppie_puresky_2k.hdr', (environmentMap) =>
+  {
+    environmentMap.mapping = THREE.EquirectangularReflectionMapping
+
+    scene.background = environmentMap
+    scene.environment = environmentMap
+  })
+
+  /**
    * Animate
    */
   const clock = new THREE.Clock()
 
-  const tick = () =>
-  {
+  const tick = () => {
     const elapsedTime = clock.getElapsedTime()
-    stats.begin();
+    const delta = clock.getDelta() // ✅ This is the correct per-frame time
+
+    stats.begin()
 
     grassMat.uniforms.uTime.value = elapsedTime;
-    // controls.update()
 
-    // Render
+    clouds.update(camera, elapsedTime, delta)
+
     renderer.render(scene, camera)
-    stats.end();
+    stats.end()
 
-    // Call tick again on the next frame
     window.requestAnimationFrame(tick)
   }
+
 
   tick()
 </script>
