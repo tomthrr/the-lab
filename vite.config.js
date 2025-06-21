@@ -70,6 +70,7 @@ export default {
           AbductionOfEuropa: resolve(__dirname, 'src/abduction-of-europa.html'),
           WindowsBg: resolve(__dirname, 'src/windows-bg.html'),
           Iframe3D: resolve(__dirname, 'src/iframe-3d.html'),
+          ParticlesCursorAnimation: resolve(__dirname, 'src/particles-cursor-animations.html'),
         }
       },
     },
