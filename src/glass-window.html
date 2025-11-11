@@ -21,6 +21,7 @@
   import vertexShader from './shaders/glass-window/basic/vertex.glsl'
   import fragmentShader from './shaders/glass-window/basic/fragment.glsl'
   import { Pane } from 'tweakpane';
+  import Stats from "three/addons/libs/stats.module.js";
 
   const canvas = document.querySelector('canvas.webgl');
 
@@ -47,6 +48,14 @@
     glassTint: "#E5F2FF",
     mixGlassTint: 0.2
   }
+
+  /**
+   * Debug
+   */
+
+  const stats = new Stats();
+  stats.showPanel( 0 ); // 0: fps, 1: ms, 2: mb, 3+: custom
+  document.body.appendChild( stats.dom );
 
   /**
    * Mouse
@@ -200,10 +209,10 @@
    */
   const clock = new THREE.Clock()
 
-  const tick = () =>
-  {
-    const elapsedTime = clock.getElapsedTime()
+  const tick = () => {
+    stats.begin(); // début de la frame
 
+    const elapsedTime = clock.getElapsedTime()
     material.uniforms.u_time.value = elapsedTime;
 
     cube.rotation.x += 0.01;
@@ -219,9 +228,11 @@
     renderer.setRenderTarget(null);
     renderer.render(scene, camera);
 
-    // Call tick again on the next frame
-    window.requestAnimationFrame(tick)
+    stats.end(); // fin de la frame, calcul du FPS
+
+    window.requestAnimationFrame(tick);
   }
+
 
   tick()
 </script>
