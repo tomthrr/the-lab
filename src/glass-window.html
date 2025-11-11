@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+  <meta
+      name="viewport"
+      content="width=device-width, minimal-ui, viewport-fit=cover, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no"
+  />
+
+  <title>ThreeJS - 3D Cube</title>
+  <link href="assets/main.scss" rel="stylesheet" />
+</head>
+<body class="container-project">
+<div class="container"></div>
+<canvas class="webgl"></canvas>
+<script type="module">
+  import * as THREE from 'three'
+  import glassVertexShader from './shaders/glass-window/vertex.glsl'
+  import glassFragmentShader from './shaders/glass-window/fragment.glsl'
+  import vertexShader from './shaders/glass-window/basic/vertex.glsl'
+  import fragmentShader from './shaders/glass-window/basic/fragment.glsl'
+  import { Pane } from 'tweakpane';
+
+  const canvas = document.querySelector('canvas.webgl');
+
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x0f0f0f);
+
+  const renderTarget = new THREE.WebGLRenderTarget(
+    window.innerWidth,
+    window.innerHeight,
+    {
+      minFilter: THREE.LinearFilter,
+      magFilter: THREE.LinearFilter,
+      format: THREE.RGBAFormat
+    }
+  );
+
+  const pane = new Pane();
+  console.log("ici: ", pane)
+
+  const params = {
+    blurAmount: 5.0,
+    opacity: 1.3,
+    isStatic: true,
+    glassTint: "#E5F2FF",
+    mixGlassTint: 0.2
+  }
+
+  /**
+   * Mouse
+   */
+
+  const cursor = {
+    x: 0,
+    y: 0
+  }
+
+  const sizes = {
+    width: window.innerWidth,
+    height: window.innerHeight
+  }
+
+  /*
+   *  Textures
+   */
+  const geometry = new THREE.BoxGeometry( 1, 1, 1 );
+  const material = new THREE.ShaderMaterial( {
+    fragmentShader,
+    vertexShader,
+    uniforms: {
+      u_time: {value : 0}
+    }
+  } );
+  const cube = new THREE.Mesh( geometry, material );
+  cube.position.z = -0.5;
+  const initialPosCube = cube.position.clone();
+  console.log(initialPosCube)
+  scene.add( cube );
+
+  const glassGeometry = new THREE.BoxGeometry(1, 1, 0.1);
+  const glassMaterial = new THREE.ShaderMaterial( {
+    fragmentShader: glassFragmentShader,
+    vertexShader: glassVertexShader,
+    transparent: true,
+    side: THREE.DoubleSide,
+    uniforms: {
+      u_texture: {value: renderTarget.texture},
+      u_resolution: {value: new THREE.Vector2(sizes.width, sizes.height)},
+      u_blurAmount: { value: params.blurAmount },
+      u_opacity: { value: params.opacity },
+      u_glassTint: { value: new THREE.Color(params.glassTint) },
+      u_mixGlassTint: { value: params.mixGlassTint },
+    },
+  } );
+  const glass = new THREE.Mesh( glassGeometry, glassMaterial );
+  glass.position.z = 0.5;
+  scene.add( glass );
+
+  /**
+   * Lights
+   */
+  const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+  scene.add(ambientLight);
+
+  const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+  directionalLight.position.set(5, 5, 5);
+  scene.add(directionalLight);
+
+  /**
+   * Sizes
+   */
+
+  window.addEventListener('resize', () => {
+    // updates sizes
+    sizes.width = window.innerWidth;
+    sizes.height = window.innerHeight;
+
+    camera.aspect = sizes.width / sizes.height;
+    camera.updateProjectionMatrix();
+
+    // Update renderer
+    renderer.setSize(sizes.width, sizes.height);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+    // IMPORTANT : update renderTarget & glass resolution uniform
+    renderTarget.setSize(sizes.width, sizes.height);
+    if (glassMaterial && glassMaterial.uniforms && glassMaterial.uniforms.u_resolution) {
+      glassMaterial.uniforms.u_resolution.value.set(sizes.width, sizes.height);
+    }
+  });
+
+
+  window.addEventListener('mousemove', (event) => {
+    cursor.x = (event.clientX / sizes.width - 0.5) * 2;  // -1 à 1
+    cursor.y = -(event.clientY / sizes.height - 0.5) * 2; // -1 à 1 (inversé pour Y)
+
+    if (!params.isStatic) {
+      glass.position.x = cursor.x * 1.3;
+      glass.position.y = cursor.y * 1.3;
+    }
+  })
+
+  /**
+   * Camera
+   */
+    // Base camera
+  const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 100)
+  camera.position.x = 0
+  camera.position.y = 0
+  camera.position.z = 2
+  scene.add(camera)
+
+  /**
+   * Renderer
+   */
+  const renderer = new THREE.WebGLRenderer({
+    canvas: canvas
+  })
+  renderer.setSize(sizes.width, sizes.height)
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+
+  /**
+   * Params
+   */
+
+  pane.addBinding(params, 'blurAmount', { min: 0, max: 50, step: 1 })
+    .on('change', (data) => {
+      glassMaterial.uniforms.u_blurAmount.value = data.value;
+    });
+
+  pane.addBinding(params, 'opacity', { min: 0, max: 2, step: 0.1 })
+    .on('change', (data) => {
+      glassMaterial.uniforms.u_opacity.value = data.value;
+    });
+
+  pane.addBinding(params, 'mixGlassTint', { min: 0, max: 1, step: 0.01 })
+    .on('change', (data) => {
+      glassMaterial.uniforms.u_mixGlassTint.value = data.value;
+    });
+
+  pane.addBinding(params, 'isStatic')
+  .on('change', (data) => {
+    if (data.value) {
+      glass.position.set(0,0,.5);
+    }
+  })
+
+  pane.addBinding(params, 'glassTint')
+    .on('change', (data) => {
+      if (data.value) {
+        glassMaterial.uniforms.u_glassTint.value = new THREE.Color(data.value);
+      }
+    })
+
+
+  /**
+   * Animate
+   */
+  const clock = new THREE.Clock()
+
+  const tick = () =>
+  {
+    const elapsedTime = clock.getElapsedTime()
+
+    material.uniforms.u_time.value = elapsedTime;
+
+    cube.rotation.x += 0.01;
+    cube.rotation.z += 0.01;
+
+    // Render scene to texture (without glass)
+    glass.visible = false;
+    renderer.setRenderTarget(renderTarget);
+    renderer.render(scene, camera);
+
+    // Render final scene with glass
+    glass.visible = true;
+    renderer.setRenderTarget(null);
+    renderer.render(scene, camera);
+
+    // Call tick again on the next frame
+    window.requestAnimationFrame(tick)
+  }
+
+  tick()
+</script>
+</body>
+</html>

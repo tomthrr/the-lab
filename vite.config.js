@@ -71,6 +71,7 @@ export default {
           WindowsBg: resolve(__dirname, 'src/windows-bg.html'),
           Iframe3D: resolve(__dirname, 'src/iframe-3d.html'),
           ParticlesCursorAnimation: resolve(__dirname, 'src/particles-cursor-animations.html'),
+          GlassWindow: resolve(__dirname, 'src/glass-window.html'),
         }
       },
     },

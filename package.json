@@ -21,6 +21,7 @@
     "postprocessing": "^6.36.7",
     "sass": "^1.71.1",
     "stats.js": "^0.17.0",
-    "three": "^0.158.0"
+    "three": "^0.158.0",
+    "tweakpane": "^4.0.5"
   }
 }
