@@ -16,10 +16,11 @@
 <canvas class="webgl"></canvas>
 <script type="module">
   import * as THREE from 'three'
-  import vertexShader from './shaders/watercolor-effect/vertex.glsl'
-  import fragmentShader from './shaders/watercolor-effect/fragment.glsl'
-  import fboShader from './shaders/watercolor-effect/fbo.glsl'
-  import finalFragmentShader from './shaders/watercolor-effect/image.glsl'
+  import GUI from 'lil-gui'
+  import vertexShader from './shaders/painting-image/vertex.glsl'
+  import fragmentShader from './shaders/painting-image/fragment.glsl'
+  import fboShader from './shaders/painting-image/fbo.glsl'
+  import finalFragmentShader from './shaders/painting-image/image.glsl'
 
   /**
    Comment ca marche ?
@@ -111,6 +112,15 @@
     // Update renderer
     renderer.setSize(sizes.width, sizes.height)
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+
+    // Update render targets
+    sourceTarget.setSize(sizes.width, sizes.height)
+    targetA.setSize(sizes.width, sizes.height)
+    targetB.setSize(sizes.width, sizes.height)
+    whiteTarget.setSize(sizes.width, sizes.height)
+
+    // Update resolution uniform
+    fboMaterial.uniforms.resolution.value.set(sizes.width, sizes.height, 1, 1)
   })
 
   /**
@@ -127,12 +137,37 @@
 
   const fboScene = new THREE.Scene();
   const fboCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+
+  /**
+   * Debug Parameters
+   */
+  const debugParams = {
+    noiseScale: 20.0,
+    dispStrength: 0.003,
+    bleedIntensity: 0.3,
+    fadeRate: 1.005,
+    fadeOffset: 0.002,
+    brushSize: 0.1,
+    clearCanvas: () => {
+      renderer.setRenderTarget(targetA);
+      renderer.render(whiteScene, camera);
+      renderer.setRenderTarget(targetB);
+      renderer.render(whiteScene, camera);
+      renderer.setRenderTarget(null);
+    }
+  };
+
   const fboMaterial = new THREE.ShaderMaterial({
     uniforms: {
       tDiffuse: { value: null },
       time: { value: 0 },
       tPrev: { value: whiteTarget.texture },
       resolution: { value: new THREE.Vector4(sizes.width, sizes.height, 1, 1) },
+      noiseScale: { value: debugParams.noiseScale },
+      dispStrength: { value: debugParams.dispStrength },
+      bleedIntensity: { value: debugParams.bleedIntensity },
+      fadeRate: { value: debugParams.fadeRate },
+      fadeOffset: { value: debugParams.fadeOffset },
     },
     vertexShader,
     fragmentShader: fboShader
@@ -143,10 +178,6 @@
 
   //final render target to output texture
   const finalScene = new THREE.Scene();
-  const finalQuad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2),
-    new THREE.MeshBasicMaterial({map: null})
-  );
-  finalScene.add(finalQuad);
 
   /**
    * Image
@@ -154,12 +185,15 @@
   const image = new THREE.TextureLoader().load("/corgi.jpg");
   const finalMaterial = new THREE.ShaderMaterial({
     uniforms: {
-      tReveal: { value: targetA.texture },
+      tReveal: { value: null },
       tColor: { value: image },
     },
     vertexShader,
-    fragmentShader: finalFragmentShader, // celui juste au-dessus
+    fragmentShader: finalFragmentShader,
   });
+
+  const finalQuad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), finalMaterial);
+  finalScene.add(finalQuad);
 
   /**
    * Camera
@@ -181,7 +215,45 @@
   renderer.setSize(sizes.width, sizes.height)
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
 
+  /**
+   * Debug GUI
+   */
+  const gui = new GUI();
+  
+  const watercolorFolder = gui.addFolder('Watercolor Effect');
+  watercolorFolder.add(debugParams, 'noiseScale', 1, 50, 0.1).name('Noise Scale').onChange((v) => {
+    fboMaterial.uniforms.noiseScale.value = v;
+  });
+  watercolorFolder.add(debugParams, 'dispStrength', 0.001, 0.02, 0.0001).name('Displacement').onChange((v) => {
+    fboMaterial.uniforms.dispStrength.value = v;
+  });
+  watercolorFolder.add(debugParams, 'bleedIntensity', 0.0, 1.0, 0.01).name('Bleed Intensity').onChange((v) => {
+    fboMaterial.uniforms.bleedIntensity.value = v;
+  });
+  watercolorFolder.add(debugParams, 'fadeRate', 1.0, 1.02, 0.0001).name('Fade Rate').onChange((v) => {
+    fboMaterial.uniforms.fadeRate.value = v;
+  });
+  watercolorFolder.add(debugParams, 'fadeOffset', 0.0, 0.01, 0.0001).name('Fade Offset').onChange((v) => {
+    fboMaterial.uniforms.fadeOffset.value = v;
+  });
+  
+  const brushFolder = gui.addFolder('Brush');
+  brushFolder.add(debugParams, 'brushSize', 0.02, 0.5, 0.01).name('Brush Size').onChange((v) => {
+    dummy.geometry.dispose();
+    dummy.geometry = new THREE.SphereGeometry(v, 32, 32);
+  });
+  brushFolder.add(debugParams, 'clearCanvas').name('Clear Canvas');
+
   window.addEventListener('mousemove', onPointerMove);
+
+  /**
+   * Initialize ping-pong buffers with white
+   */
+  renderer.setRenderTarget(targetA);
+  renderer.render(whiteScene, camera);
+  renderer.setRenderTarget(targetB);
+  renderer.render(whiteScene, camera);
+  renderer.setRenderTarget(null);
 
   /**
    * Animate
@@ -192,30 +264,25 @@
   {
     const elapsedTime = clock.getElapsedTime()
 
-
-    // Render the source
+    // Render the source scene (sphere following mouse)
     renderer.setRenderTarget(sourceTarget);
     renderer.render(scene, camera)
 
-    renderer.setRenderTarget(whiteTarget);
-    renderer.render(whiteScene, camera);
-
-    // Ping pong
-    renderer.setRenderTarget(targetA);
-    renderer.render(fboScene, fboCamera);
+    // Update FBO uniforms
     fboMaterial.uniforms.tDiffuse.value = sourceTarget.texture;
     fboMaterial.uniforms.tPrev.value = targetA.texture;
     fboMaterial.uniforms.time.value = elapsedTime;
 
-    // final output
-    finalQuad.material = finalMaterial;
-    finalMaterial.uniforms.tReveal.value = targetA.texture;
+    // Render watercolor effect to targetB
+    renderer.setRenderTarget(targetB);
+    renderer.render(fboScene, fboCamera);
+
+    // Final output with revealed image
+    finalMaterial.uniforms.tReveal.value = targetB.texture;
     renderer.setRenderTarget(null);
     renderer.render(finalScene, fboCamera);
 
-
-
-    // swap
+    // Swap buffers for next frame
     const temp = targetA;
     targetA = targetB;
     targetB = temp;
